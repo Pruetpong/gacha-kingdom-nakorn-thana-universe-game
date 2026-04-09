@@ -1,0 +1,4744 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>GACHA KINGDOM — นครธนา Universe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;600&family=Chakra+Petch:wght@400;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- MathLive: math rendering + interactive input -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mathlive/mathlive-fonts.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mathlive/mathlive-static.css">
+    <script src="https://cdn.jsdelivr.net/npm/mathlive"></script>
+    <!-- marked.js: Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- DOMPurify: XSS sanitization -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+
+    <style>
+        /* ══════════════════════════════════════════════════════════════
+        CSS VARIABLES — defaults for GACHA KINGDOM; overridden by applyTheme()
+        ══════════════════════════════════════════════════════════════ */
+        :root {
+            --font-heading: 'Chakra Petch', monospace;
+            --font-body: 'Sarabun', sans-serif;
+            --font-mono: 'Chakra Petch', monospace;
+
+            --primary: #7c3aed;
+            --secondary: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f97316;
+            --bg: #0f0a1e;
+            --card: #1a1035;
+            --border: #2d1b69;
+            --accent: #a78bfa;
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+
+            --primary-rgb: 124, 58, 237;
+            --primary-glow: rgba(124, 58, 237, .35);
+            --success-glow: rgba(16, 185, 129, .30);
+            --danger-glow: rgba(239, 68, 68, .30);
+            --card-hover: #221448;
+            --card-active: #1d1050;
+
+            --radius-sm: 6px;
+            --radius: 12px;
+            --radius-lg: 18px;
+            --radius-xl: 24px;
+            --transition: 0.22s cubic-bezier(.4, 0, .2, 1);
+            --hud-height: 60px;
+            --tab-height: 56px;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            height: 100%;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100%;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+            /* MathLive virtual keyboard vars */
+            --keyboard-zindex: 800;
+            --keyboard-accent-color: var(--primary);
+            --keycap-background: var(--card);
+            --keycap-background-hover: var(--card-hover);
+            --keycap-background-active: var(--primary);
+            --keycap-border: var(--border);
+            --keycap-border-bottom: var(--border);
+            --keycap-text: var(--text);
+            --keycap-text-active: #fff;
+            --keyboard-toolbar-background: var(--bg);
+            --keyboard-toolbar-text: var(--muted);
+            --keyboard-toolbar-text-active: var(--primary);
+            --keyboard-toolbar-background-selected: rgba(124, 58, 237, .15);
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            outline: none;
+            font-family: inherit;
+        }
+
+        input,
+        textarea {
+            font-family: inherit;
+            outline: none;
+            border: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        #chat-messages::-webkit-scrollbar,
+        #quest-list::-webkit-scrollbar,
+        .fq-body::-webkit-scrollbar,
+        .quest-detail-view::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        #chat-messages::-webkit-scrollbar-thumb,
+        #quest-list::-webkit-scrollbar-thumb,
+        .fq-body::-webkit-scrollbar-thumb,
+        .quest-detail-view::-webkit-scrollbar-thumb {
+            background: rgba(var(--primary-rgb), .45);
+            border-radius: 2px;
+        }
+
+        /* FIX-2: Grid texture uses CSS variable instead of hardcoded Indigo */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background-image:
+                linear-gradient(rgba(var(--primary-rgb), .04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(var(--primary-rgb), .04) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* ── Utility ──────────────────────────────────────────────── */
+        .hidden {
+            display: none !important;
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        .flex-col {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .items-center {
+            align-items: center;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        .gap-1 {
+            gap: 4px;
+        }
+
+        .gap-2 {
+            gap: 8px;
+        }
+
+        .gap-3 {
+            gap: 12px;
+        }
+
+        .gap-4 {
+            gap: 16px;
+        }
+
+        .w-full {
+            width: 100%;
+        }
+
+        .text-sm {
+            font-size: .85rem;
+        }
+
+        .text-xs {
+            font-size: .75rem;
+        }
+
+        .text-muted {
+            color: var(--muted);
+        }
+
+        .text-success {
+            color: var(--success);
+        }
+
+        .text-danger {
+            color: var(--danger);
+        }
+
+        .text-accent {
+            color: var(--accent);
+        }
+
+        .truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ══════════════════════════════════════════════════════════════
+        SCREENS
+        ══════════════════════════════════════════════════════════════ */
+        .screen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Loading */
+        #screen-loading {
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .loading-logo {
+            font-family: var(--font-heading);
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-shadow: 0 0 30px var(--primary-glow);
+            letter-spacing: -.02em;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .loading-sub {
+            font-size: .9rem;
+            color: var(--muted);
+            font-family: var(--font-mono);
+            letter-spacing: .05em;
+        }
+
+        .loader-ring {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes pulse-glow {
+
+            0%,
+            100% {
+                text-shadow: 0 0 20px var(--primary-glow);
+            }
+
+            50% {
+                text-shadow: 0 0 40px var(--primary-glow), 0 0 60px var(--primary-glow);
+            }
+        }
+
+        /* Intro */
+        #screen-intro {
+            background: var(--bg);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .intro-slide {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 440px;
+            width: 100%;
+            animation: slide-up .4s ease;
+        }
+
+        .intro-slide.active {
+            display: flex;
+        }
+
+        @keyframes slide-up {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .intro-emoji {
+            font-size: 4rem;
+            line-height: 1;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, .2));
+        }
+
+        .intro-title {
+            font-family: var(--font-heading);
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 16px;
+            text-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .intro-content {
+            font-size: 1rem;
+            color: var(--muted);
+            line-height: 1.8;
+            margin-bottom: 36px;
+            white-space: pre-line;
+        }
+
+        .intro-dots {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 28px;
+        }
+
+        .intro-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: var(--transition);
+        }
+
+        .intro-dot.active {
+            background: var(--primary);
+            transform: scale(1.3);
+        }
+
+        .btn-intro-next {
+            padding: 14px 40px;
+            background: var(--primary);
+            color: #fff;
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: var(--radius-xl);
+            transition: var(--transition);
+            box-shadow: 0 4px 20px var(--primary-glow);
+        }
+
+        .btn-intro-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px var(--primary-glow);
+        }
+
+        /* Name */
+        #screen-name {
+            background: var(--bg);
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .name-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 36px 28px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            animation: slide-up .3s ease;
+        }
+
+        .name-card h2 {
+            font-family: var(--font-heading);
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .name-card p {
+            color: var(--muted);
+            font-size: .9rem;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .role-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-family: var(--font-mono);
+            font-size: .8rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            letter-spacing: .05em;
+        }
+
+        .input-name {
+            width: 100%;
+            padding: 14px 18px;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-size: 1rem;
+            transition: var(--transition);
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .input-name:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .btn-start-game {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            font-family: var(--font-heading);
+            font-size: 1.05rem;
+            font-weight: 700;
+            border-radius: var(--radius);
+            transition: var(--transition);
+            box-shadow: 0 4px 20px var(--primary-glow);
+            letter-spacing: .02em;
+        }
+
+        .btn-start-game:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px var(--primary-glow);
+        }
+
+        .btn-start-game:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ══════════════════════════════════════════════════════════════
+        MAIN GAME SCREEN
+        ══════════════════════════════════════════════════════════════ */
+        #screen-game {
+            background: var(--bg);
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* HUD */
+        #hud {
+            height: var(--hud-height);
+            background: rgba(15, 10, 30, .95);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 12px;
+            flex-shrink: 0;
+            z-index: 50;
+            position: sticky;
+            top: 0;
+        }
+
+        .hud-game-title {
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary-glow);
+            white-space: nowrap;
+            letter-spacing: -.01em;
+        }
+
+        .hud-game-emoji {
+            font-size: 1.2rem;
+        }
+
+        .hud-divider {
+            width: 1px;
+            height: 28px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        .hud-xp-wrap {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .hud-xp-label {
+            font-family: var(--font-mono);
+            font-size: .65rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+        }
+
+        .hud-xp-bar {
+            height: 5px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .hud-xp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 3px;
+            transition: width .6s ease;
+            box-shadow: 0 0 6px var(--primary-glow);
+        }
+
+        .hud-stats {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .hud-stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-family: var(--font-mono);
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--secondary);
+            background: rgba(245, 158, 11, .1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(245, 158, 11, .2);
+            white-space: nowrap;
+        }
+
+        .hud-level {
+            font-family: var(--font-mono);
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--accent);
+            background: rgba(var(--primary-rgb), .1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(var(--primary-rgb), .2);
+            white-space: nowrap;
+        }
+
+        /* Tab Bar */
+        #tab-bar {
+            height: var(--tab-height);
+            display: flex;
+            flex-shrink: 0;
+            background: rgba(15, 10, 30, .98);
+            border-bottom: 1px solid var(--border);
+            z-index: 40;
+        }
+
+        .tab-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            background: transparent;
+            color: var(--muted);
+            font-size: .7rem;
+            font-family: var(--font-body);
+            font-weight: 600;
+            letter-spacing: .02em;
+            border-bottom: 2px solid transparent;
+            transition: var(--transition);
+        }
+
+        .tab-btn .tab-icon {
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Game Content */
+        #game-content {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            position: relative;
+        }
+
+        .game-tab-panel {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            padding: 16px 16px 24px;
+        }
+
+        .game-tab-panel.active {
+            display: flex;
+        }
+
+        @media (min-width:768px) {
+            #tab-bar {
+                display: none;
+            }
+
+            #game-content {
+                overflow: hidden;
+            }
+
+            .game-tab-panel {
+                display: flex !important;
+                position: absolute;
+            }
+
+            #panel-world {
+                width: 62%;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                border-right: 1px solid var(--border);
+            }
+
+            #panel-quests {
+                width: 38%;
+                right: 0;
+                top: 0;
+                bottom: 0;
+            }
+
+            #panel-items {
+                display: none !important;
+            }
+
+            .desktop-items-in-quest {
+                display: flex !important;
+            }
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .section-title {
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-badge {
+            font-family: var(--font-mono);
+            font-size: .68rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(var(--primary-rgb), .15);
+            color: var(--accent);
+            border: 1px solid rgba(var(--primary-rgb), .2);
+        }
+
+        /* World Law Box */
+        .world-law-box {
+            background: linear-gradient(135deg, rgba(var(--primary-rgb), .1), rgba(var(--primary-rgb), .05));
+            border: 1px solid rgba(var(--primary-rgb), .2);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            font-size: .85rem;
+            line-height: 1.7;
+            color: var(--muted);
+        }
+
+        /* ── ADD-1: Evidence Progress Tracker ──────────────────────── */
+        .evidence-tracker {
+            background: linear-gradient(135deg, rgba(var(--primary-rgb), .08), rgba(16, 185, 129, .05));
+            border: 1px solid rgba(var(--primary-rgb), .2);
+            border-radius: var(--radius);
+            padding: 12px 14px;
+            margin-bottom: 14px;
+        }
+
+        .evidence-tracker-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .evidence-tracker-title {
+            font-family: var(--font-mono);
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .evidence-count-badge {
+            font-family: var(--font-mono);
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--muted);
+        }
+
+        .evidence-count-badge.complete {
+            color: var(--success);
+        }
+
+        .evidence-slots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .evidence-slot {
+            background: rgba(0, 0, 0, .2);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 8px;
+            text-align: center;
+            transition: var(--transition);
+            min-height: 64px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .evidence-slot.unlocked {
+            background: rgba(16, 185, 129, .08);
+            border: 1px solid rgba(16, 185, 129, .3);
+            animation: evidence-glow .6s ease;
+        }
+
+        .evidence-slot.unlocked.new-unlock {
+            animation: evidence-pop .5s cubic-bezier(.18, .89, .32, 1.28);
+        }
+
+        @keyframes evidence-glow {
+            from {
+                box-shadow: 0 0 20px rgba(16, 185, 129, .4);
+            }
+
+            to {
+                box-shadow: none;
+            }
+        }
+
+        @keyframes evidence-pop {
+            0% {
+                transform: scale(.8);
+                opacity: 0;
+            }
+
+            60% {
+                transform: scale(1.08);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .evidence-slot-emoji {
+            font-size: 1.3rem;
+            line-height: 1;
+        }
+
+        .evidence-slot-name {
+            font-size: .62rem;
+            color: var(--muted);
+            line-height: 1.3;
+            text-align: center;
+        }
+
+        .evidence-slot.unlocked .evidence-slot-name {
+            color: var(--success);
+        }
+
+        .evidence-slot-lock {
+            font-size: .85rem;
+            color: var(--border);
+        }
+
+        .evidence-complete-banner {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(16, 185, 129, .12);
+            border: 1px solid rgba(16, 185, 129, .3);
+            border-radius: var(--radius-sm);
+            font-size: .78rem;
+            color: var(--success);
+            text-align: center;
+            font-weight: 600;
+            display: none;
+            animation: slide-up .3s ease;
+        }
+
+        .evidence-complete-banner.show {
+            display: block;
+        }
+
+        /* NPC Grid */
+        #npc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        @media (min-width:768px) {
+            #npc-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            }
+        }
+
+        .npc-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .npc-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .npc-card:hover:not(.locked) {
+            border-color: var(--primary);
+            background: var(--card-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
+        }
+
+        .npc-card:hover:not(.locked)::before {
+            opacity: 1;
+        }
+
+        .npc-card.has-active-quest {
+            border-color: rgba(var(--primary-rgb), .5);
+            box-shadow: 0 0 16px rgba(var(--primary-rgb), .15);
+            animation: quest-pulse 2.5s ease-in-out infinite;
+        }
+
+        @keyframes quest-pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 12px rgba(var(--primary-rgb), .15);
+            }
+
+            50% {
+                box-shadow: 0 0 24px rgba(var(--primary-rgb), .3);
+            }
+        }
+
+        .npc-card.completed {
+            opacity: .65;
+        }
+
+        .npc-card.locked {
+            opacity: .4;
+            cursor: default;
+            filter: grayscale(.6);
+        }
+
+        .npc-avatar-wrap {
+            position: relative;
+            width: 56px;
+            height: 56px;
+        }
+
+        .npc-avatar {
+            font-size: 2.4rem;
+            line-height: 56px;
+            width: 56px;
+            height: 56px;
+            background: rgba(255, 255, 255, .05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .npc-card.has-active-quest .npc-avatar {
+            box-shadow: 0 0 16px var(--primary-glow);
+        }
+
+        .npc-quest-dot {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 12px;
+            height: 12px;
+            background: var(--primary);
+            border: 2px solid var(--bg);
+            border-radius: 50%;
+            display: none;
+            animation: bounce-dot 1s ease-in-out infinite;
+        }
+
+        .npc-card.has-active-quest .npc-quest-dot {
+            display: block;
+        }
+
+        @keyframes bounce-dot {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.3);
+            }
+        }
+
+        .npc-completed-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 16px;
+            height: 16px;
+            background: var(--success);
+            border: 2px solid var(--bg);
+            border-radius: 50%;
+            font-size: .55rem;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .npc-card.completed .npc-completed-badge {
+            display: flex;
+        }
+
+        .npc-lock-icon {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            font-size: .9rem;
+            display: none;
+        }
+
+        .npc-card.locked .npc-lock-icon {
+            display: block;
+        }
+
+        .npc-name {
+            font-family: var(--font-heading);
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.2;
+        }
+
+        .npc-title {
+            font-size: .72rem;
+            color: var(--muted);
+            line-height: 1.3;
+        }
+
+        .npc-archetype-tag {
+            font-family: var(--font-mono);
+            font-size: .62rem;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 8px;
+            letter-spacing: .04em;
+            white-space: nowrap;
+        }
+
+        .archetype-gatekeeper {
+            background: rgba(var(--primary-rgb), .2);
+            color: var(--accent);
+            border: 1px solid rgba(var(--primary-rgb), .3);
+        }
+
+        .archetype-mentor_with_secret {
+            background: rgba(16, 185, 129, .15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, .25);
+        }
+
+        .archetype-unreliable_witness {
+            background: rgba(245, 158, 11, .15);
+            color: var(--secondary);
+            border: 1px solid rgba(245, 158, 11, .25);
+        }
+
+        .archetype-rival {
+            background: rgba(239, 68, 68, .15);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, .25);
+        }
+
+        .archetype-quest_giver {
+            background: rgba(14, 165, 233, .15);
+            color: #38bdf8;
+            border: 1px solid rgba(14, 165, 233, .25);
+        }
+
+        .archetype-trickster {
+            background: rgba(168, 85, 247, .15);
+            color: #c084fc;
+            border: 1px solid rgba(168, 85, 247, .25);
+        }
+
+        .npc-unlock-hint {
+            font-size: .68rem;
+            color: var(--muted);
+            line-height: 1.3;
+            font-style: italic;
+        }
+
+        .npc-status-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-family: var(--font-mono);
+            font-size: .60rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 10px;
+            letter-spacing: .04em;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        .npc-badge-talk {
+            background: rgba(var(--primary-rgb), .15);
+            border: 1px solid rgba(var(--primary-rgb), .4);
+            color: var(--accent);
+            animation: quest-pulse 2.5s ease-in-out infinite;
+        }
+
+        .npc-badge-quest {
+            background: rgba(245, 158, 11, .15);
+            border: 1px solid rgba(245, 158, 11, .4);
+            color: var(--secondary);
+        }
+
+        .npc-badge-done {
+            background: rgba(16, 185, 129, .15);
+            border: 1px solid rgba(16, 185, 129, .3);
+            color: var(--success);
+        }
+
+        .npc-badge-locked {
+            background: rgba(148, 163, 184, .08);
+            border: 1px solid rgba(148, 163, 184, .2);
+            color: var(--muted);
+        }
+
+        /* Quest Log */
+        .quest-filter {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .quest-filter-btn {
+            padding: 5px 12px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--muted);
+            font-size: .75rem;
+            font-family: var(--font-body);
+            font-weight: 600;
+            letter-spacing: .02em;
+            transition: var(--transition);
+        }
+
+        .quest-filter-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 10px var(--primary-glow);
+        }
+
+        .quest-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .quest-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .quest-card:hover {
+            border-color: rgba(var(--primary-rgb), .4);
+            background: var(--card-hover);
+        }
+
+        .quest-card.active-quest {
+            border-color: var(--primary);
+            box-shadow: 0 0 12px rgba(var(--primary-rgb), .15);
+        }
+
+        .quest-card.completed-quest {
+            opacity: .6;
+        }
+
+        .quest-card.locked-quest {
+            opacity: .4;
+            cursor: default;
+        }
+
+        .quest-card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .quest-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            line-height: 1.3;
+        }
+
+        .quest-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .quest-title {
+            font-family: var(--font-heading);
+            font-size: .88rem;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .quest-meta {
+            display: flex;
+            gap: 6px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+
+        .quest-tag {
+            font-family: var(--font-mono);
+            font-size: .62rem;
+            font-weight: 600;
+            padding: 1px 7px;
+            border-radius: 8px;
+            letter-spacing: .04em;
+        }
+
+        .tag-main {
+            background: rgba(var(--primary-rgb), .15);
+            color: var(--accent);
+        }
+
+        .tag-side {
+            background: rgba(14, 165, 233, .15);
+            color: #38bdf8;
+        }
+
+        .tag-final {
+            background: rgba(245, 158, 11, .2);
+            color: var(--secondary);
+        }
+
+        .tag-bloom {
+            background: rgba(16, 185, 129, .12);
+            color: var(--success);
+        }
+
+        .tag-locked {
+            background: rgba(255, 255, 255, .06);
+            color: var(--muted);
+        }
+
+        .tag-done {
+            background: rgba(16, 185, 129, .15);
+            color: var(--success);
+        }
+
+        .quest-status-icon {
+            font-size: .9rem;
+            flex-shrink: 0;
+        }
+
+        /* Inventory */
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .item-chip {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .item-chip:hover {
+            border-color: rgba(var(--primary-rgb), .4);
+            background: var(--card-hover);
+        }
+
+        .item-chip-emoji {
+            font-size: 1.4rem;
+        }
+
+        .item-chip-name {
+            font-size: .65rem;
+            color: var(--muted);
+            line-height: 1.2;
+        }
+
+        .item-chip.badge {
+            border-color: rgba(245, 158, 11, .3);
+            background: rgba(245, 158, 11, .05);
+        }
+
+        .item-chip.badge .item-chip-emoji {
+            filter: drop-shadow(0 0 6px rgba(245, 158, 11, .4));
+        }
+
+        /* ══════════════════════════════════════════════════════════════
+        NPC TERMINAL MODAL
+        ══════════════════════════════════════════════════════════════ */
+        #modal-npc {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            background: rgba(0, 0, 0, .85);
+            backdrop-filter: blur(6px);
+            padding: 0;
+        }
+
+        #modal-npc.open {
+            display: flex;
+        }
+
+        #modal-npc-card {
+            width: 100%;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+            border-radius: 20px 20px 0 0;
+            overflow: hidden;
+            animation: modal-slide-up .25s ease;
+        }
+
+        @keyframes modal-slide-up {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (min-width:768px) {
+            #modal-npc {
+                align-items: center;
+                padding: 24px;
+            }
+
+            #modal-npc-card {
+                width: 680px;
+                height: auto;
+                max-height: 85vh;
+                border-radius: 16px;
+                box-shadow: 0 24px 80px rgba(0, 0, 0, .6);
+                animation: modal-scale-in .25s cubic-bezier(.18, .89, .32, 1.1);
+            }
+
+            @keyframes modal-scale-in {
+                from {
+                    transform: scale(.94);
+                    opacity: 0;
+                }
+
+                to {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+            }
+        }
+
+        .terminal-header {
+            padding: 14px 16px;
+            background: rgba(15, 10, 30, .95);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .terminal-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            transition: var(--transition);
+        }
+
+        /* ADD-2: Rival header accent */
+        .terminal-header.rival-mode::after {
+            background: linear-gradient(90deg, transparent, var(--danger), transparent);
+        }
+
+        .terminal-header.rival-mode {
+            background: rgba(30, 10, 10, .95);
+        }
+
+        @media (max-width:767px) {
+            #modal-npc-card>.terminal-header {
+                padding-top: max(14px, env(safe-area-inset-top, 14px));
+            }
+        }
+
+        .terminal-npc-avatar {
+            font-size: 2rem;
+            line-height: 1;
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, .05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        .terminal-npc-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .terminal-npc-name {
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .terminal-npc-title {
+            font-size: .75rem;
+            color: var(--muted);
+            margin-top: 1px;
+        }
+
+        .terminal-close {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, .05);
+            border-radius: 50%;
+            color: var(--muted);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+
+        .terminal-close:hover {
+            background: rgba(239, 68, 68, .15);
+            color: var(--danger);
+        }
+
+        .terminal-tabs {
+            display: flex;
+            background: rgba(15, 10, 30, .8);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .terminal-tab {
+            flex: 1;
+            padding: 10px 8px;
+            background: transparent;
+            color: var(--muted);
+            font-size: .78rem;
+            font-family: var(--font-body);
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: var(--transition);
+        }
+
+        .terminal-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .terminal-tab-panel {
+            display: none;
+            flex: 1;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        .terminal-tab-panel.active {
+            display: flex;
+        }
+
+        /* Chat View */
+        #chat-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-bubble {
+            max-width: 82%;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            animation: bubble-in .2s ease;
+        }
+
+        @keyframes bubble-in {
+            from {
+                opacity: 0;
+                transform: scale(.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .chat-bubble.npc {
+            align-self: flex-start;
+        }
+
+        .chat-bubble.player {
+            align-self: flex-end;
+        }
+
+        .chat-bubble.system {
+            align-self: center;
+            max-width: 90%;
+        }
+
+        .bubble-sender {
+            font-family: var(--font-mono);
+            font-size: .65rem;
+            color: var(--muted);
+            letter-spacing: .04em;
+            padding: 0 6px;
+        }
+
+        .chat-bubble.player .bubble-sender {
+            text-align: right;
+        }
+
+        .bubble-text {
+            padding: 12px 14px;
+            border-radius: var(--radius);
+            font-size: .88rem;
+            line-height: 1.7;
+            word-break: break-word;
+        }
+
+        .chat-bubble.npc .bubble-text {
+            background: rgba(26, 16, 53, .9);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--primary);
+            border-radius: 0 var(--radius) var(--radius) var(--radius);
+        }
+
+        .chat-bubble.player .bubble-text {
+            background: rgba(var(--primary-rgb), .10);
+            border: 1px solid rgba(var(--primary-rgb), .25);
+            border-right: 3px solid var(--success);
+            color: var(--text);
+            border-radius: var(--radius) 0 var(--radius) var(--radius);
+        }
+
+        .chat-bubble.system .bubble-text {
+            background: rgba(var(--primary-rgb), .08);
+            border: 1px solid rgba(var(--primary-rgb), .15);
+            color: var(--accent);
+            font-style: italic;
+            font-size: .82rem;
+            border-radius: var(--radius);
+        }
+
+        .chat-bubble.kc-question .bubble-text {
+            background: rgba(var(--primary-rgb), .12);
+            border: 1px solid rgba(var(--primary-rgb), .3);
+            border-left: 3px solid var(--accent);
+        }
+
+        .chat-bubble.kc-pass .bubble-text {
+            background: rgba(16, 185, 129, .1);
+            border: 1px solid rgba(16, 185, 129, .3);
+            border-left: 3px solid var(--success);
+            color: var(--success);
+            font-style: normal;
+        }
+
+        .chat-bubble.kc-fail .bubble-text {
+            background: rgba(239, 68, 68, .08);
+            border: 1px solid rgba(239, 68, 68, .2);
+            border-left: 3px solid var(--danger);
+            color: var(--danger);
+            font-style: normal;
+        }
+
+        /* ADD-2: Rival NPC bubble styling */
+        .npc-bubble-rival .bubble-text {
+            border-left-color: var(--danger) !important;
+            background: rgba(239, 68, 68, .05) !important;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 5px;
+            padding: 12px 14px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            max-width: 80px;
+            align-self: flex-start;
+        }
+
+        .typing-indicator.visible {
+            display: flex;
+        }
+
+        .typing-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--primary);
+            animation: typing-bounce .9s ease-in-out infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: .15s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: .30s;
+        }
+
+        @keyframes typing-bounce {
+
+            0%,
+            100% {
+                opacity: .4;
+                transform: translateY(0);
+            }
+
+            50% {
+                opacity: 1;
+                transform: translateY(-5px);
+            }
+        }
+
+        /* Markdown in bubbles */
+        .bubble-text p {
+            margin: 0 0 .45em;
+        }
+
+        .bubble-text p:last-child {
+            margin-bottom: 0;
+        }
+
+        .bubble-text ul,
+        .bubble-text ol {
+            margin: .35em 0 .35em 1.3em;
+            padding: 0;
+        }
+
+        .bubble-text li {
+            margin-bottom: .2em;
+            line-height: 1.6;
+        }
+
+        .bubble-text code {
+            font-family: var(--font-mono);
+            background: rgba(var(--primary-rgb), .12);
+            color: var(--accent);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: .87em;
+        }
+
+        .bubble-text h3,
+        .bubble-text h4 {
+            font-family: var(--font-heading);
+            font-size: .95rem;
+            font-weight: 700;
+            margin: .55em 0 .25em;
+            color: var(--accent);
+        }
+
+        .bubble-text blockquote {
+            border-left: 3px solid var(--primary);
+            padding-left: 10px;
+            color: var(--muted);
+            margin: .4em 0;
+            font-style: italic;
+        }
+
+        .bubble-text hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: .55em 0;
+        }
+
+        .bubble-text.streaming::after {
+            content: '▋';
+            display: inline-block;
+            animation: blink-cursor .75s step-end infinite;
+            color: var(--primary);
+            margin-left: 2px;
+            font-size: .85em;
+        }
+
+        @keyframes blink-cursor {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .math-formula {
+            font-family: var(--font-mono);
+            color: var(--accent);
+            background: rgba(var(--primary-rgb), .1);
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: .85em;
+        }
+
+        /* Quest Bar */
+        .chat-quest-bar {
+            padding: 8px 14px;
+            background: rgba(var(--primary-rgb), .08);
+            border-top: 1px solid rgba(var(--primary-rgb), .15);
+            border-bottom: 1px solid rgba(var(--primary-rgb), .1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .78rem;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .quest-bar-icon {
+            font-size: .9rem;
+        }
+
+        .chat-turns-badge {
+            margin-left: auto;
+            font-family: var(--font-mono);
+            font-size: .68rem;
+            color: var(--muted);
+        }
+
+        /* ── Chat Input Area ─────────────────────────────────────── */
+        .chat-input-area {
+            padding: 12px 14px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+            background: rgba(15, 10, 30, .95);
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        /* Formula Popup */
+        #formula-popup {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 14px;
+            right: 14px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 14px;
+            z-index: 100;
+            box-shadow: 0 -8px 32px rgba(0, 0, 0, .45);
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            animation: slide-up .2s ease;
+        }
+
+        #formula-popup.open {
+            display: flex;
+        }
+
+        .formula-popup-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .formula-popup-label {
+            font-family: var(--font-mono);
+            font-size: .72rem;
+            color: var(--accent);
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .formula-popup-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 2px;
+        }
+
+        .btn-formula-cancel {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, .06);
+            color: var(--muted);
+            font-family: var(--font-body);
+            font-size: .85rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+        }
+
+        .btn-formula-cancel:hover {
+            background: rgba(255, 255, 255, .1);
+            color: var(--text);
+        }
+
+        .btn-formula-insert {
+            padding: 8px 18px;
+            background: var(--primary);
+            color: #fff;
+            font-family: var(--font-heading);
+            font-size: .85rem;
+            font-weight: 700;
+            border-radius: var(--radius-sm);
+            box-shadow: 0 2px 8px var(--primary-glow);
+            transition: var(--transition);
+        }
+
+        .btn-formula-insert:hover {
+            background: var(--accent);
+        }
+
+        /* ADD-3: Geometric Comparator Popup */
+        #comparator-popup {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 14px;
+            right: 14px;
+            background: var(--card);
+            border: 1px solid rgba(var(--primary-rgb), .3);
+            border-radius: var(--radius-lg);
+            padding: 14px;
+            z-index: 101;
+            box-shadow: 0 -8px 32px rgba(0, 0, 0, .5);
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            animation: slide-up .2s ease;
+        }
+
+        #comparator-popup.open {
+            display: flex;
+        }
+
+        .comparator-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .comparator-title {
+            font-family: var(--font-mono);
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .comparator-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .8rem;
+        }
+
+        .comparator-table th {
+            padding: 5px 8px;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: .68rem;
+            font-weight: 700;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+            letter-spacing: .04em;
+        }
+
+        .comparator-table th.col-arith {
+            color: var(--secondary);
+        }
+
+        .comparator-table th.col-geo {
+            color: var(--success);
+        }
+
+        .comparator-table td {
+            padding: 5px 8px;
+            text-align: center;
+            font-size: .78rem;
+            border-bottom: 1px solid rgba(255, 255, 255, .04);
+        }
+
+        .comparator-table td.col-n {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: var(--muted);
+            font-size: .72rem;
+        }
+
+        .comparator-table td.col-arith {
+            color: var(--secondary);
+        }
+
+        .comparator-table td.col-geo {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .comparator-note {
+            font-size: .72rem;
+            color: var(--muted);
+            line-height: 1.6;
+            padding: 6px 8px;
+            background: rgba(var(--primary-rgb), .06);
+            border-radius: var(--radius-sm);
+        }
+
+        /* Normal Input Wrap */
+        .normal-input-wrap {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        textarea.chat-input {
+            flex: 1;
+            min-height: 44px;
+            max-height: 120px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 10px 14px;
+            color: var(--text);
+            font-size: .9rem;
+            line-height: 1.5;
+            resize: none;
+            transition: var(--transition);
+            overflow-y: auto;
+        }
+
+        textarea.chat-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+
+        .btn-send {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-sm);
+            background: var(--primary);
+            color: #fff;
+            font-size: 1rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            box-shadow: 0 2px 10px var(--primary-glow);
+        }
+
+        .btn-send:hover {
+            background: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .btn-send:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-math-toggle {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-sm);
+            background: rgba(var(--primary-rgb), .12);
+            color: var(--accent);
+            border: 1px solid rgba(var(--primary-rgb), .25);
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .btn-math-toggle:hover {
+            background: rgba(var(--primary-rgb), .22);
+        }
+
+        .btn-math-toggle.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px var(--primary-glow);
+        }
+
+        /* ADD-3: Comparator toggle button */
+        .btn-comparator {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-sm);
+            background: rgba(16, 185, 129, .1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, .2);
+            font-size: 1rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .btn-comparator:hover {
+            background: rgba(16, 185, 129, .2);
+        }
+
+        .btn-comparator.active {
+            background: var(--success);
+            color: #fff;
+            border-color: var(--success);
+        }
+
+        /* KC Mode: yellow border on textarea + hint button in quest-bar */
+        textarea.chat-input.kc-mode {
+            border-color: var(--secondary) !important;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, .25) !important;
+        }
+
+        .btn-kc-hint-bar {
+            padding: 3px 10px;
+            background: rgba(245, 158, 11, .12);
+            color: var(--secondary);
+            border: 1px solid rgba(245, 158, 11, .3);
+            font-family: var(--font-body);
+            font-size: .72rem;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .btn-kc-hint-bar:hover {
+            background: rgba(245, 158, 11, .22);
+        }
+
+        /* Quest Detail Tab */
+        .quest-detail-view {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .quest-detail-title {
+            font-family: var(--font-heading);
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .quest-stages-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .quest-stage {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            font-size: .83rem;
+            line-height: 1.6;
+            color: var(--muted);
+        }
+
+        .stage-num {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--border);
+            color: var(--muted);
+            font-family: var(--font-mono);
+            font-size: .7rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .quest-lo-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .lo-chip {
+            font-family: var(--font-mono);
+            font-size: .68rem;
+            font-weight: 600;
+            padding: 3px 9px;
+            border-radius: 10px;
+            background: rgba(16, 185, 129, .1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, .2);
+        }
+
+        /* ══════════════════════════════════════════════════════════════
+        FINAL QUEST MODAL
+        ══════════════════════════════════════════════════════════════ */
+        #modal-final-quest {
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            display: none;
+            flex-direction: column;
+            background: var(--bg);
+        }
+
+        #modal-final-quest.open {
+            display: flex;
+        }
+
+        .fq-header {
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, .1), rgba(var(--primary-rgb), .05));
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .fq-header h2 {
+            font-family: var(--font-heading);
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--secondary);
+        }
+
+        .fq-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 16px;
+            padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .fq-task-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            border-left: 3px solid var(--secondary);
+            font-size: .88rem;
+            line-height: 1.8;
+        }
+
+        textarea.fq-submission {
+            width: 100%;
+            min-height: 240px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            color: var(--text);
+            font-size: .9rem;
+            line-height: 1.7;
+            resize: vertical;
+            transition: var(--transition);
+        }
+
+        textarea.fq-submission:focus {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, .2);
+        }
+
+        .fq-char-count {
+            font-family: var(--font-mono);
+            font-size: .72rem;
+            color: var(--muted);
+            text-align: right;
+            margin-top: -8px;
+        }
+
+        .btn-fq-submit {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--secondary), #d97706);
+            color: #fff;
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: var(--radius);
+            transition: var(--transition);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, .25);
+        }
+
+        .btn-fq-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(245, 158, 11, .35);
+        }
+
+        .btn-fq-submit:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .fq-result-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .fq-result-box.pass {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, .06);
+        }
+
+        .fq-result-box.fail {
+            border-color: var(--danger);
+            background: rgba(239, 68, 68, .06);
+        }
+
+        .fq-score {
+            font-family: var(--font-heading);
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .fq-result-box.pass .fq-score {
+            color: var(--success);
+        }
+
+        .fq-result-box.fail .fq-score {
+            color: var(--danger);
+        }
+
+        .fq-dim-scores {
+            margin: 14px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .fq-dim-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .82rem;
+        }
+
+        .fq-dim-name {
+            flex: 1;
+            color: var(--muted);
+            text-align: left;
+        }
+
+        .fq-dim-bar-wrap {
+            width: 80px;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .fq-dim-bar {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1s ease;
+        }
+
+        .fq-feedback {
+            font-size: .88rem;
+            line-height: 1.7;
+            color: var(--muted);
+            margin-top: 12px;
+        }
+
+        .fq-hint {
+            font-size: .85rem;
+            line-height: 1.6;
+            color: var(--warning);
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        /* ══════════════════════════════════════════════════════════════
+        CONSEQUENCE CHAIN MODAL
+        ══════════════════════════════════════════════════════════════ */
+        #modal-consequence {
+            position: fixed;
+            inset: 0;
+            z-index: 400;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, .85);
+            backdrop-filter: blur(8px);
+            padding: 24px;
+        }
+
+        #modal-consequence.open {
+            display: flex;
+        }
+
+        .consequence-card {
+            background: var(--card);
+            border: 2px solid var(--danger);
+            border-radius: var(--radius-lg);
+            padding: 28px 24px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 40px var(--danger-glow);
+            animation: shake .5s ease;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(-8px);
+            }
+
+            40% {
+                transform: translateX(8px);
+            }
+
+            60% {
+                transform: translateX(-5px);
+            }
+
+            80% {
+                transform: translateX(5px);
+            }
+        }
+
+        .consequence-title {
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--danger);
+            margin-bottom: 20px;
+        }
+
+        .consequence-stage {
+            background: rgba(239, 68, 68, .08);
+            border: 1px solid rgba(239, 68, 68, .2);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            font-size: .9rem;
+            line-height: 1.7;
+            margin-bottom: 16px;
+            min-height: 64px;
+            animation: stage-reveal .4s ease;
+        }
+
+        @keyframes stage-reveal {
+            from {
+                opacity: 0;
+                transform: scale(.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .consequence-progress {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .consequence-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: var(--transition);
+        }
+
+        .consequence-dot.done {
+            background: var(--danger);
+        }
+
+        .consequence-dot.active {
+            background: var(--warning);
+            transform: scale(1.4);
+        }
+
+        .consequence-lesson {
+            background: rgba(16, 185, 129, .08);
+            border: 1px solid rgba(16, 185, 129, .2);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            font-size: .82rem;
+            color: var(--success);
+            line-height: 1.7;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .btn-consequence-next {
+            padding: 12px 32px;
+            background: var(--danger);
+            color: #fff;
+            font-family: var(--font-heading);
+            font-size: .9rem;
+            font-weight: 700;
+            border-radius: var(--radius-xl);
+            transition: var(--transition);
+        }
+
+        .btn-consequence-next:hover {
+            transform: translateY(-1px);
+        }
+
+        /* ══════════════════════════════════════════════════════════════
+        REWARD MODAL
+        ══════════════════════════════════════════════════════════════ */
+        #modal-reward {
+            position: fixed;
+            inset: 0;
+            z-index: 350;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, .7);
+            backdrop-filter: blur(6px);
+            padding: 24px;
+        }
+
+        #modal-reward.open {
+            display: flex;
+        }
+
+        .reward-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 28px 24px;
+            max-width: 360px;
+            width: 100%;
+            text-align: center;
+            animation: reward-pop .4s cubic-bezier(.18, .89, .32, 1.28);
+        }
+
+        @keyframes reward-pop {
+            from {
+                transform: scale(.6);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .reward-header-emoji {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
+        .reward-title {
+            font-family: var(--font-heading);
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+            color: var(--secondary);
+        }
+
+        .reward-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 16px 0;
+            text-align: left;
+        }
+
+        .reward-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, .04);
+            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            font-size: .85rem;
+        }
+
+        .reward-item-emoji {
+            font-size: 1.2rem;
+        }
+
+        .reward-item-name {
+            font-weight: 600;
+        }
+
+        .reward-item-desc {
+            font-size: .75rem;
+            color: var(--muted);
+        }
+
+        .reward-xp-big {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--success);
+            margin: 8px 0;
+        }
+
+        .btn-reward-close {
+            width: 100%;
+            padding: 13px;
+            background: var(--primary);
+            color: #fff;
+            font-family: var(--font-heading);
+            font-size: .95rem;
+            font-weight: 700;
+            border-radius: var(--radius);
+            transition: var(--transition);
+            margin-top: 8px;
+            box-shadow: 0 4px 16px var(--primary-glow);
+        }
+
+        .btn-reward-close:hover {
+            transform: translateY(-1px);
+        }
+
+        .xp-float {
+            position: fixed;
+            z-index: 600;
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--success);
+            text-shadow: 0 0 10px var(--success-glow);
+            pointer-events: none;
+            animation: xp-float-up 1.4s ease forwards;
+        }
+
+        @keyframes xp-float-up {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+
+            80% {
+                opacity: .8;
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-70px) scale(1.2);
+            }
+        }
+
+        /* Item Detail */
+        #modal-item {
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            background: rgba(0, 0, 0, .6);
+            backdrop-filter: blur(4px);
+        }
+
+        #modal-item.open {
+            display: flex;
+        }
+
+        .item-detail-sheet {
+            background: var(--card);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            border-top: 1px solid var(--border);
+            padding: 24px 20px 36px;
+            width: 100%;
+            max-width: 480px;
+            max-height: 75vh;
+            overflow-y: auto;
+            animation: sheet-up .25s ease;
+        }
+
+        @keyframes sheet-up {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .item-detail-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .item-detail-emoji {
+            font-size: 2.5rem;
+        }
+
+        .item-detail-name {
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .item-detail-type {
+            font-family: var(--font-mono);
+            font-size: .7rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .item-detail-desc {
+            font-size: .88rem;
+            color: var(--muted);
+            line-height: 1.7;
+            margin-bottom: 14px;
+        }
+
+        .item-detail-content {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            font-size: .88rem;
+            line-height: 1.8;
+        }
+
+        .item-detail-close {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, .06);
+            color: var(--muted);
+            font-family: var(--font-body);
+            font-size: .9rem;
+            font-weight: 600;
+            border-radius: var(--radius);
+            margin-top: 16px;
+            transition: var(--transition);
+        }
+
+        .item-detail-close:hover {
+            background: rgba(255, 255, 255, .1);
+            color: var(--text);
+        }
+
+        /* Badge Celebration */
+        #overlay-badge {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, .85);
+            backdrop-filter: blur(10px);
+        }
+
+        #overlay-badge.open {
+            display: flex;
+        }
+
+        .badge-celebrate-card {
+            text-align: center;
+            padding: 36px 28px;
+            animation: badge-reveal .6s cubic-bezier(.18, .89, .32, 1.28);
+        }
+
+        @keyframes badge-reveal {
+            0% {
+                transform: scale(.2) rotate(-10deg);
+                opacity: 0;
+            }
+
+            60% {
+                transform: scale(1.1) rotate(2deg);
+            }
+
+            100% {
+                transform: scale(1) rotate(0);
+                opacity: 1;
+            }
+        }
+
+        .badge-big-emoji {
+            font-size: 5rem;
+            display: block;
+            margin-bottom: 16px;
+            filter: drop-shadow(0 0 30px rgba(245, 158, 11, .6));
+            animation: badge-spin 4s ease-in-out infinite;
+        }
+
+        @keyframes badge-spin {
+
+            0%,
+            100% {
+                transform: scale(1) rotate(0);
+            }
+
+            50% {
+                transform: scale(1.05) rotate(3deg);
+            }
+        }
+
+        .badge-celebrate-name {
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--secondary);
+            text-shadow: 0 0 20px rgba(245, 158, 11, .5);
+            margin-bottom: 8px;
+        }
+
+        .badge-celebrate-desc {
+            font-size: .88rem;
+            color: var(--muted);
+            margin-bottom: 24px;
+            max-width: 280px;
+        }
+
+        .btn-badge-dismiss {
+            padding: 12px 36px;
+            background: rgba(245, 158, 11, .15);
+            color: var(--secondary);
+            border: 1px solid rgba(245, 158, 11, .3);
+            font-family: var(--font-heading);
+            font-size: .9rem;
+            font-weight: 700;
+            border-radius: var(--radius-xl);
+            transition: var(--transition);
+        }
+
+        .btn-badge-dismiss:hover {
+            background: rgba(245, 158, 11, .25);
+        }
+
+        .confetti-container {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 499;
+            overflow: hidden;
+            display: none;
+        }
+
+        .confetti-container.open {
+            display: block;
+        }
+
+        .confetti-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: confetti-fall linear forwards;
+        }
+
+        @keyframes confetti-fall {
+            from {
+                transform: translateY(-10px) rotate(0deg);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateY(110vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Mentor Secret */
+        .mentor-secret-bubble {
+            background: linear-gradient(135deg, rgba(16, 185, 129, .1), rgba(6, 95, 70, .1));
+            border: 1px solid rgba(16, 185, 129, .25);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            font-size: .86rem;
+            line-height: 1.8;
+            margin-top: 4px;
+            animation: secret-reveal .5s ease;
+        }
+
+        @keyframes secret-reveal {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .mentor-level-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(16, 185, 129, .15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, .25);
+            font-family: var(--font-mono);
+            font-size: .7rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-bottom: 8px;
+        }
+
+        /* Toast */
+        #toast-container {
+            position: fixed;
+            bottom: 80px;
+            right: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 700;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 10px 14px;
+            font-size: .83rem;
+            max-width: 280px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: toast-in .25s ease, toast-out .25s ease 2.75s forwards;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, .3);
+        }
+
+        .toast.success {
+            border-color: rgba(16, 185, 129, .4);
+        }
+
+        .toast.error {
+            border-color: rgba(239, 68, 68, .4);
+        }
+
+        .toast.info {
+            border-color: rgba(var(--primary-rgb), .4);
+        }
+
+        @keyframes toast-in {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes toast-out {
+            to {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+        }
+
+        /* Game Complete */
+        #screen-complete {
+            background: radial-gradient(ellipse at center, #1a1035 0%, var(--bg) 70%);
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 32px 20px;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .complete-title {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--secondary);
+            text-shadow: 0 0 30px rgba(245, 158, 11, .5);
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .complete-badges {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            font-size: 2.5rem;
+        }
+
+        .complete-stats {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 240px;
+        }
+
+        .complete-stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: .9rem;
+        }
+
+        .complete-stat-row span:last-child {
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .complete-message {
+            font-size: .9rem;
+            color: var(--muted);
+            line-height: 1.7;
+            max-width: 360px;
+        }
+
+        /* Misc */
+        .empty-state {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--muted);
+            font-size: .88rem;
+            line-height: 1.7;
+        }
+
+        .empty-state-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* Phase Banner */
+        .phase-banner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 8px 12px;
+            margin-bottom: 14px;
+            background: rgba(var(--primary-rgb), .06);
+            border: 1px solid rgba(var(--primary-rgb), .12);
+            border-radius: var(--radius-sm);
+            overflow-x: auto;
+            scrollbar-width: none;
+            flex-wrap: nowrap;
+        }
+
+        .phase-banner::-webkit-scrollbar {
+            display: none;
+        }
+
+        .phase-step-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-family: var(--font-mono);
+            font-size: .63rem;
+            font-weight: 600;
+            color: var(--muted);
+            white-space: nowrap;
+            transition: color .3s;
+            letter-spacing: .03em;
+        }
+
+        .phase-step-item.active {
+            color: var(--accent);
+        }
+
+        .phase-step-item.done {
+            color: var(--success);
+        }
+
+        .phase-dot-item {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
+        }
+
+        .phase-step-item.active .phase-dot-item {
+            animation: bounce-dot 1.5s ease-in-out infinite;
+            box-shadow: 0 0 5px currentColor;
+        }
+
+        .phase-sep {
+            color: var(--border);
+            font-size: .6rem;
+            font-family: var(--font-mono);
+            flex-shrink: 0;
+        }
+
+        .spinner-inline {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, .2);
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin .6s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        /* MathLive field */
+        math-field {
+            --caret-color: var(--primary);
+            --selection-background-color: rgba(var(--primary-rgb), 0.25);
+            --selection-color: var(--text);
+            font-size: 1rem;
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 10px 14px;
+            width: 100%;
+            display: block;
+            transition: var(--transition);
+        }
+
+        math-field:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+            outline: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SCREEN: LOADING -->
+    <div id="screen-loading" class="screen active">
+        <div class="loader-ring"></div>
+        <div class="loading-logo" id="loading-title">GACHA KINGDOM</div>
+        <div class="loading-sub" id="loading-sub">กำลังโหลด...</div>
+    </div>
+
+    <!-- SCREEN: INTRO -->
+    <div id="screen-intro" class="screen">
+        <div id="intro-slides-container"></div>
+        <div class="intro-dots" id="intro-dots"></div>
+        <button class="btn-intro-next" id="btn-intro-next">ถัดไป →</button>
+    </div>
+
+    <!-- SCREEN: NAME -->
+    <div id="screen-name" class="screen">
+        <div class="name-card">
+            <div id="name-screen-emoji" style="font-size:2.5rem;margin-bottom:12px;">🎲</div>
+            <div class="role-badge" id="name-role-badge">Digital Detective</div>
+            <h2>ยินดีต้อนรับ!</h2>
+            <p id="name-role-desc">ป้อนชื่อของคุณเพื่อเริ่มปฏิบัติการสืบสวน</p>
+            <input class="input-name" id="input-player-name" type="text" maxlength="30" placeholder="ชื่อของคุณ..."
+                autocomplete="off">
+            <button class="btn-start-game" id="btn-start-game" disabled>เริ่มปฏิบัติการ 🔍</button>
+        </div>
+    </div>
+
+    <!-- SCREEN: MAIN GAME -->
+    <div id="screen-game" class="screen">
+
+        <!-- HUD -->
+        <div id="hud">
+            <span class="hud-game-emoji" id="hud-emoji">🎲</span>
+            <span class="hud-game-title" id="hud-title">GACHA KINGDOM</span>
+            <div class="hud-divider"></div>
+            <div class="hud-xp-wrap">
+                <div class="hud-xp-label">
+                    <span id="hud-level-label">Lv.1</span>
+                    <span id="hud-xp-label">0 / 100 XP</span>
+                </div>
+                <div class="hud-xp-bar">
+                    <div class="hud-xp-fill" id="hud-xp-fill" style="width:0%"></div>
+                </div>
+            </div>
+            <div class="hud-stats">
+                <div class="hud-stat" id="hud-tokens">🔍 100 EP</div>
+            </div>
+        </div>
+
+        <!-- Tab Bar -->
+        <div id="tab-bar">
+            <button class="tab-btn active" data-tab="world" onclick="game.switchTab('world')"><span
+                    class="tab-icon">🗺️</span> โลก</button>
+            <button class="tab-btn" data-tab="quests" onclick="game.switchTab('quests')"><span
+                    class="tab-icon">📋</span> ภารกิจ</button>
+            <button class="tab-btn" data-tab="items" onclick="game.switchTab('items')"><span class="tab-icon">🎒</span>
+                ไอเทม</button>
+        </div>
+
+        <!-- Game Content -->
+        <div id="game-content">
+
+            <!-- Panel: World -->
+            <div class="game-tab-panel active" id="panel-world">
+                <div class="phase-banner" id="phase-banner">— BRIEFING —</div>
+                <div class="section-header">
+                    <div class="section-title">🎮 <span id="world-name">Kingdom of Eternal Pull</span>
+                        <span class="section-badge" id="npc-count-badge">6 NPCs</span>
+                    </div>
+                </div>
+                <div class="world-law-box" id="world-law-box"></div>
+                <!-- ADD-1: Evidence Tracker (shown only when has_investigation=true) -->
+                <div class="evidence-tracker hidden" id="evidence-tracker">
+                    <div class="evidence-tracker-header">
+                        <span class="evidence-tracker-title">🔍 Evidence Progress</span>
+                        <span class="evidence-count-badge" id="evidence-count">0 / 3</span>
+                    </div>
+                    <div class="evidence-slots" id="evidence-slots"></div>
+                    <div class="evidence-complete-banner" id="evidence-complete-banner">
+                        🔓 Evidence ครบ 3 ชิ้น — CEO Kong ปลดล็อกแล้ว!
+                    </div>
+                </div>
+                <div id="npc-grid"></div>
+            </div>
+
+            <!-- Panel: Quests -->
+            <div class="game-tab-panel" id="panel-quests">
+                <div class="section-header">
+                    <div class="section-title">📋 ภารกิจ</div>
+                    <span class="section-badge" id="quest-done-count">0 สำเร็จ</span>
+                </div>
+                <div class="quest-filter">
+                    <button class="quest-filter-btn active" data-filter="all"
+                        onclick="game.filterQuests('all')">ทั้งหมด</button>
+                    <button class="quest-filter-btn" data-filter="available"
+                        onclick="game.filterQuests('available')">พร้อม</button>
+                    <button class="quest-filter-btn" data-filter="completed"
+                        onclick="game.filterQuests('completed')">สำเร็จ</button>
+                    <button class="quest-filter-btn" data-filter="locked"
+                        onclick="game.filterQuests('locked')">ล็อก</button>
+                </div>
+                <div id="quest-list" class="quest-list"></div>
+                <div class="desktop-items-in-quest hidden" style="flex-direction:column;margin-top:20px;">
+                    <div class="section-header" style="margin-top:8px;">
+                        <div class="section-title">🎒 ไอเทม &amp; Badges</div>
+                        <span class="section-badge" id="inv-count-desk">0</span>
+                    </div>
+                    <div class="inventory-grid" id="inv-grid-desk"></div>
+                </div>
+            </div>
+
+            <!-- Panel: Items (mobile) -->
+            <div class="game-tab-panel" id="panel-items">
+                <div class="section-header">
+                    <div class="section-title">🎒 ไอเทม</div>
+                    <span class="section-badge" id="inv-count-mob">0</span>
+                </div>
+                <h4
+                    style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted);letter-spacing:.08em;margin-bottom:8px;">
+                    INVENTORY</h4>
+                <div class="inventory-grid" id="inv-grid-mob"></div>
+                <h4
+                    style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted);letter-spacing:.08em;margin-bottom:8px;margin-top:16px;">
+                    BADGES</h4>
+                <div class="inventory-grid" id="badge-grid-mob"></div>
+                <div class="section-header" style="margin-top:20px;">
+                    <div class="section-title">📊 Learning Progress</div>
+                </div>
+                <div id="lo-progress-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+            </div>
+
+        </div><!-- /game-content -->
+    </div><!-- /screen-game -->
+
+    <!-- SCREEN: COMPLETE -->
+    <div id="screen-complete" class="screen">
+        <div class="complete-title" id="complete-title">🎉 ปฏิบัติการสำเร็จ!</div>
+        <div class="complete-badges" id="complete-badges"></div>
+        <div class="complete-stats" id="complete-stats"></div>
+        <div class="complete-message" id="complete-message"></div>
+    </div>
+
+    <!-- MODAL: NPC TERMINAL -->
+    <div id="modal-npc">
+        <div id="modal-npc-card">
+            <div class="terminal-header" id="terminal-header">
+                <div class="terminal-npc-avatar" id="term-avatar">🖥️</div>
+                <div class="terminal-npc-info">
+                    <div class="terminal-npc-name" id="term-name">NPC</div>
+                    <div class="terminal-npc-title" id="term-title"></div>
+                </div>
+                <div class="npc-archetype-tag" id="term-archetype" style="margin-right:8px;"></div>
+                <button class="terminal-close" onclick="game.closeNPC()">✕</button>
+            </div>
+            <div class="terminal-tabs">
+                <button class="terminal-tab active" id="ttab-chat" onclick="game.switchTerminalTab('chat')">💬
+                    สนทนา</button>
+                <button class="terminal-tab" id="ttab-quest" onclick="game.switchTerminalTab('quest')">📋
+                    ภารกิจ</button>
+            </div>
+            <!-- Chat Tab Panel — FIX-1: KC is now integrated into chat flow -->
+            <div class="terminal-tab-panel active" id="tpanel-chat">
+                <div class="chat-quest-bar" id="chat-quest-bar">
+                    <span class="quest-bar-icon">📌</span>
+                    <span id="chat-quest-name">ภารกิจ</span>
+                    <button class="btn-kc-hint-bar hidden" id="btn-kc-hint-bar" onclick="game.showKCHint()">💡
+                        Hint</button>
+                    <span class="chat-turns-badge" id="chat-turns-badge">เทิร์น 0</span>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="typing-indicator" id="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <!-- Formula Popup -->
+                    <div id="formula-popup">
+                        <div class="formula-popup-header">
+                            <span class="formula-popup-label">📐 แทรกสูตรคณิตศาสตร์</span>
+                            <button class="terminal-close" onclick="game.closeFormulaPopup()"
+                                style="position:static;width:28px;height:28px;font-size:.85rem;">✕</button>
+                        </div>
+                        <math-field id="chat-math-field" math-virtual-keyboard-policy="manual"
+                            placeholder="พิมพ์สูตรที่นี่..."></math-field>
+                        <div class="formula-popup-actions">
+                            <button class="btn-formula-cancel" onclick="game.closeFormulaPopup()">ยกเลิก</button>
+                            <button class="btn-formula-insert" onclick="game.insertFormula()">แทรกสูตร ✓</button>
+                        </div>
+                    </div>
+                    <!-- ADD-3: Geometric Comparator Popup -->
+                    <div id="comparator-popup">
+                        <div class="comparator-header">
+                            <span class="comparator-title">📊 Arithmetic vs Geometric</span>
+                            <button class="terminal-close" onclick="game.closeComparatorPopup()"
+                                style="position:static;width:28px;height:28px;font-size:.85rem;">✕</button>
+                        </div>
+                        <table class="comparator-table" id="comparator-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-n">Pull #</th>
+                                    <th class="col-arith">Arithmetic<br><small
+                                            style="font-weight:400;color:var(--muted)">+d ทุก Pull</small></th>
+                                    <th class="col-geo">Geometric<br><small
+                                            style="font-weight:400;color:var(--muted)">×r ทุก Pull</small></th>
+                                </tr>
+                            </thead>
+                            <tbody id="comparator-tbody"></tbody>
+                        </table>
+                        <div class="comparator-note" id="comparator-note"></div>
+                    </div>
+                    <!-- Normal Input Wrap -->
+                    <div id="normal-input-wrap" class="normal-input-wrap">
+                        <textarea class="chat-input" id="chat-input" rows="1" placeholder="พิมพ์ข้อความ..."
+                            onkeydown="game.handleChatKey(event)" enterkeyhint="send" inputmode="text"></textarea>
+                        <button class="btn-math-toggle" id="btn-math-toggle" onclick="game.toggleFormulaPopup()"
+                            title="แทรกสูตรคณิตศาสตร์ (∑)">∑</button>
+                        <button class="btn-comparator hidden" id="btn-comparator" onclick="game.toggleComparatorPopup()"
+                            title="เปรียบเทียบ Arithmetic vs Geometric">📊</button>
+                        <button class="btn-send" id="btn-send" onclick="game.sendMessage()">➤</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Quest Tab Panel -->
+            <div class="terminal-tab-panel" id="tpanel-quest">
+                <div class="quest-detail-view" id="quest-detail-view">
+                    <div class="empty-state"><span class="empty-state-icon">📋</span>เลือก NPC เพื่อดูภารกิจ</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: FINAL QUEST -->
+    <div id="modal-final-quest">
+        <div class="fq-header">
+            <div>
+                <div
+                    style="font-size:.75rem;color:var(--muted);font-family:var(--font-mono);letter-spacing:.08em;margin-bottom:2px;">
+                    FINAL QUEST</div>
+                <h2 id="fq-title">รายงานสืบสวน</h2>
+            </div>
+            <button class="terminal-close" onclick="game.closeFinalQuest()" id="btn-close-fq">✕</button>
+        </div>
+        <div class="fq-body">
+            <div class="fq-task-box" id="fq-task-prompt"></div>
+            <div>
+                <label
+                    style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted);letter-spacing:.08em;display:block;margin-bottom:6px;">YOUR
+                    SUBMISSION</label>
+                <textarea class="fq-submission" id="fq-submission-input" placeholder="เขียนรายงานที่นี่..."
+                    oninput="game.updateFQCharCount()"></textarea>
+                <div class="fq-char-count" id="fq-char-count">0 ตัวอักษร</div>
+            </div>
+            <button class="btn-fq-submit" id="btn-fq-submit" onclick="game.submitFinalQuest()">📤 ส่งรายงาน</button>
+            <div class="fq-result-box" id="fq-result-box">
+                <div class="fq-score" id="fq-score-display">0%</div>
+                <div class="fq-dim-scores" id="fq-dim-scores"></div>
+                <div class="fq-feedback" id="fq-feedback"></div>
+                <div class="fq-hint" id="fq-hint"></div>
+                <button class="btn-fq-submit" id="btn-fq-retry"
+                    style="display:none;margin-top:14px;background:var(--border);" onclick="game.retryFinalQuest()">🔄
+                    ลองอีกครั้ง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CONSEQUENCE CHAIN -->
+    <div id="modal-consequence">
+        <div class="consequence-card">
+            <div class="consequence-title">⚠️ Consequence Chain</div>
+            <div class="consequence-progress" id="consequence-progress"></div>
+            <div class="consequence-stage" id="consequence-stage-text">...</div>
+            <div class="consequence-lesson" id="consequence-lesson"></div>
+            <button class="btn-consequence-next" id="btn-consequence-next" onclick="game.nextConsequenceStage()">ดูต่อ
+                →</button>
+        </div>
+    </div>
+
+    <!-- MODAL: REWARD -->
+    <div id="modal-reward">
+        <div class="reward-card">
+            <div class="reward-header-emoji" id="reward-emoji">🎁</div>
+            <div class="reward-title" id="reward-title">ภารกิจสำเร็จ!</div>
+            <div class="reward-xp-big" id="reward-xp-big"></div>
+            <div class="reward-items" id="reward-items-list"></div>
+            <button class="btn-reward-close" onclick="game.closeReward()">ยอดเยี่ยม! ✓</button>
+        </div>
+    </div>
+
+    <!-- MODAL: ITEM DETAIL -->
+    <div id="modal-item" onclick="game.closeItemDetail()">
+        <div class="item-detail-sheet" onclick="event.stopPropagation()">
+            <div class="item-detail-header">
+                <div class="item-detail-emoji" id="item-detail-emoji">📋</div>
+                <div>
+                    <div class="item-detail-name" id="item-detail-name">Item</div>
+                    <div class="item-detail-type" id="item-detail-type">access_item</div>
+                </div>
+            </div>
+            <div class="item-detail-desc" id="item-detail-desc"></div>
+            <div class="item-detail-content" id="item-detail-content" style="display:none;"></div>
+            <button class="item-detail-close" onclick="game.closeItemDetail()">ปิด</button>
+        </div>
+    </div>
+
+    <!-- BADGE CELEBRATION -->
+    <div class="confetti-container" id="confetti-container"></div>
+    <div id="overlay-badge">
+        <div class="badge-celebrate-card">
+            <span class="badge-big-emoji" id="badge-celebrate-emoji">🏅</span>
+            <div class="badge-celebrate-name" id="badge-celebrate-name"></div>
+            <div class="badge-celebrate-desc" id="badge-celebrate-desc"></div>
+            <button class="btn-badge-dismiss" onclick="game.closeBadgeCelebration()">รับ Badge ✓</button>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast-container"></div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+    GAME ENGINE — Vanilla JS IIFE
+    ══════════════════════════════════════════════════════════════ -->
+    <script>
+        'use strict';
+
+        const game = (() => {
+
+            // ══════════════════════════════════════════════════════════════
+            //  STATE
+            // ══════════════════════════════════════════════════════════════
+            let CONFIG = {};
+            let XP_PER_LEVEL = 100;
+            let _activeTab = 'world';
+            let _terminalTab = 'chat';
+            let _questFilter = 'all';
+            let _activeNPCId = null;
+            let _kcPassed = false;
+            let _inKCMode = false;
+            let _currentKCQuest = null;
+            let _kcParams = null;   // stores current random param set for local evaluation
+
+            // ── Local KC Question Bank (no API call needed) ────────────
+            const KC_QUESTION_BANK = {
+                'mq_01_entry_protocol': {
+                    param_sets: [
+                        { a1: 100, r: 2, ask_n: 5, seq: [100, 200, 400, 800] },
+                        { a1: 50, r: 3, ask_n: 4, seq: [50, 150, 450, 1350] },
+                        { a1: 200, r: 2, ask_n: 6, seq: [200, 400, 800, 1600] },
+                        { a1: 100, r: 4, ask_n: 4, seq: [100, 400, 1600, 6400] },
+                        { a1: 300, r: 2, ask_n: 5, seq: [300, 600, 1200, 2400] },
+                    ],
+                    // Static hint explaining what r is (for first-time learners)
+                    hint_th: (
+                        '💡 **Hint: ค่า r คืออะไร?**\n\n' +
+                        'r คือ "Common Ratio" หรืออัตราส่วนระหว่างพจน์ที่ติดกัน\n\n' +
+                        'วิธีหา r: นำ Pull ที่ 2 ÷ Pull ที่ 1\n' +
+                        'ถ้าได้เลขเดิมทุกคู่ — นั่นคือ r\n\n' +
+                        'ตัวอย่าง: 200÷100 = 400÷200 = **2** → r = 2\n\n' +
+                        'จากนั้นใช้สูตร $a_n = a_1 \\cdot r^{n-1}$ เพื่อหาพจน์ที่ต้องการ'
+                    ),
+                },
+            };
+
+            // Generate local KC question (no API call)
+            function generateKCQuestion(questId) {
+                const bank = KC_QUESTION_BANK[questId];
+                if (!bank) return null;
+                const params = bank.param_sets[Math.floor(Math.random() * bank.param_sets.length)];
+                _kcParams = params;
+                const seqLines = params.seq.map((v, i) =>
+                    `Pull ที่ ${i + 1}: **฿${v.toLocaleString()} บาท**`).join('\n');
+                return (
+                    `🔐 **Knowledge Gate — ก่อนสนทนากับ G.A.T.E.**\n\n` +
+                    `ตอบ 2 ข้อนี้ก่อน (พิมพ์ตอบในช่องด้านล่างได้เลย):\n\n` +
+                    `---\n\n` +
+                    `📋 **Pull Cost Sequence:**\n${seqLines}\n\n` +
+                    `**ข้อ 1:** ค่า $r$ (Common Ratio) คือเท่าไร?\n` +
+                    `*(ลองหาร Pull ที่ 2 ÷ Pull ที่ 1)*\n\n` +
+                    `**ข้อ 2:** ถ้าใช้สูตร $a_n = a_1 \\cdot r^{n-1}$\n` +
+                    `Pull ที่ **${params.ask_n}** จะมีราคาเท่าไร?`
+                );
+            }
+
+            // Extract numbers from answer string
+            function extractNumbers(text) {
+                const nums = [];
+                const matches = (text || '').match(/[\d,]+\.?\d*/g) || [];
+                for (const m of matches) {
+                    const n = parseFloat(m.replace(/,/g, ''));
+                    if (!isNaN(n) && n > 0) nums.push(n);
+                }
+                return nums;
+            }
+
+            // Local evaluation for mq_01 (no API call)
+            function evaluateKCLocally(answer, params) {
+                const { a1, r, ask_n } = params;
+                const correct_an = a1 * Math.pow(r, ask_n - 1);
+                const nums = extractNumbers(answer);
+                // Try to find r explicitly: "r=2", "r = 2", "r:2"
+                const rMatch = answer.match(/r\s*[=:]\s*([\d.]+)/i);
+                const rFromText = rMatch ? parseFloat(rMatch[1]) : null;
+                const rCorrect = nums.some(n => Math.abs(n - r) < 0.01)
+                    || (rFromText !== null && Math.abs(rFromText - r) < 0.01);
+                const anCorrect = nums.some(n => Math.abs(n - correct_an) < 1);
+
+                if (rCorrect && anCorrect) return {
+                    passed: true, score: 1.0,
+                    feedback_th: `✅ ถูกต้องทั้งสองข้อ!\n$r = ${r}$ และ $a_{${ask_n}} = ${correct_an.toLocaleString()}$ บาท\nเริ่มสนทนากับ G.A.T.E. ได้เลย`,
+                };
+                if (anCorrect) return {
+                    passed: true, score: 0.85,
+                    feedback_th: `✅ ผ่าน! $a_{${ask_n}} = ${correct_an.toLocaleString()}$ บาท ถูกต้อง`,
+                };
+                if (rCorrect) return {
+                    passed: false, score: 0.5,
+                    feedback_th: `$r = ${r}$ ถูกแล้ว! ทีนี้คำนวณ $a_{${ask_n}} = ${a1} \\times ${r}^{${ask_n}-1}$ ได้เท่าไร?`,
+                };
+                return {
+                    passed: false, score: 0.0,
+                    feedback_th: `ยังไม่ถูกต้อง — ลองหาร Pull ที่ 2 ÷ Pull ที่ 1 เพื่อหาค่า $r$ ก่อนเลย`,
+                };
+            }
+            let _streaming = false;
+            let _consequenceData = null;
+            let _consequenceStageIdx = 0;
+            let _formulaPopupOpen = false;
+            let _comparatorOpen = false;     // ADD-3
+            let _currentNPCArchetype = null; // ADD-2: for rival visual
+
+            // Evidence fragment IDs (used by tracker)
+            const EVIDENCE_IDS = ['evidence_fragment_1', 'evidence_fragment_2', 'evidence_fragment_3'];
+
+            let S = {
+                player: { name: 'นักเรียน', xp: 0, level: 1, tokens: 100, lives: null, inventory: [], badges: [], fragments: [] },
+                current_phase: 'briefing',
+                unlocked_npcs: [], active_npc_id: null,
+                quest_statuses: {}, mentor_levels: {}, npc_chat_turns: {}, npc_chat_history: {},
+                completed_quests: [], active_quest_id: null,
+                consequence_active: false, consequence_quest: null,
+                game_completed: false, turn_count: 0,
+            };
+
+            // ══════════════════════════════════════════════════════════════
+            //  RENDER PIPELINE: Markdown + MathLive
+            // ══════════════════════════════════════════════════════════════
+            function renderBubbleContent(rawText) {
+                if (!rawText) return '';
+                const mathSegments = [];
+                let processed = rawText;
+                processed = processed.replace(/\$\$([\s\S]+?)\$\$/g, (_, latex) => {
+                    const idx = mathSegments.length;
+                    mathSegments.push({ latex: latex.trim(), display: true });
+                    return `MPLC${idx}END`;
+                });
+                processed = processed.replace(/\$((?:[^$\\]|\\.)+?)\$/g, (_, latex) => {
+                    const idx = mathSegments.length;
+                    mathSegments.push({ latex: latex.trim(), display: false });
+                    return `MPLC${idx}END`;
+                });
+                let html = '';
+                if (typeof marked !== 'undefined') {
+                    html = marked.parse(processed, { breaks: true, gfm: true, mangle: false, headerIds: false });
+                } else {
+                    html = escapeHtml(processed).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+                }
+                if (typeof DOMPurify !== 'undefined') {
+                    html = DOMPurify.sanitize(html, {
+                        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'span', 'code', 'pre', 'blockquote', 'hr'],
+                        ALLOWED_ATTR: ['class', 'style'],
+                    });
+                }
+                html = html.replace(/MPLC(\d+)END/g, (_, idx) => {
+                    const seg = mathSegments[parseInt(idx)];
+                    if (!seg) return '';
+                    if (typeof MathLive !== 'undefined') {
+                        try { return MathLive.convertLatexToMarkup(seg.latex); }
+                        catch (e) { return `<span class="math-formula">${seg.latex}</span>`; }
+                    }
+                    return `<span class="math-formula">${seg.latex}</span>`;
+                });
+                return html;
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  INIT
+            // ══════════════════════════════════════════════════════════════
+            async function init() {
+                if (typeof marked !== 'undefined') marked.setOptions({ breaks: true, gfm: true });
+                try {
+                    const data = await api('/api/game-config', 'GET');
+                    CONFIG = data;
+                    applyTheme(data.game_config.theme);
+                    initGameState(data);
+                    buildIntroSlides(data.game_config.intro_slides);
+                    showScreen('intro');
+                } catch (e) {
+                    console.error('Init failed:', e);
+                    document.getElementById('loading-sub').textContent = '❌ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์';
+                }
+            }
+
+            // FIX-2: applyTheme now also sets --primary-rgb for grid texture
+            function applyTheme(theme) {
+                if (!theme) return;
+                const map = {
+                    color_primary: '--primary', color_secondary: '--secondary',
+                    color_success: '--success', color_danger: '--danger',
+                    color_warning: '--warning', color_bg: '--bg', color_card: '--card',
+                    color_border: '--border', color_accent: '--accent',
+                    color_text: '--text', color_muted: '--muted',
+                };
+                const root = document.documentElement.style;
+                for (const [k, v] of Object.entries(map)) {
+                    if (theme[k]) root.setProperty(v, theme[k]);
+                }
+                if (theme.color_primary) {
+                    root.setProperty('--primary-glow', hexToRgba(theme.color_primary, .35));
+                    // FIX-2: set --primary-rgb for grid texture
+                    root.setProperty('--primary-rgb', hexToRgb(theme.color_primary));
+                }
+                const body = document.body.style;
+                if (theme.color_primary) body.setProperty('--keyboard-accent-color', theme.color_primary);
+                if (theme.color_card) body.setProperty('--keycap-background', theme.color_card);
+                if (theme.color_border) { body.setProperty('--keycap-border', theme.color_border); body.setProperty('--keycap-border-bottom', theme.color_border); }
+                if (theme.color_text) body.setProperty('--keycap-text', theme.color_text);
+                if (theme.color_bg) body.setProperty('--keyboard-toolbar-background', theme.color_bg);
+                if (theme.color_muted) body.setProperty('--keyboard-toolbar-text', theme.color_muted);
+                if (theme.color_primary) body.setProperty('--keyboard-toolbar-text-active', theme.color_primary);
+                if (theme.font_heading) document.documentElement.style.setProperty('--font-heading', `'${theme.font_heading}', sans-serif`);
+            }
+
+            function hexToRgba(hex, a) {
+                const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+                return `rgba(${r},${g},${b},${a})`;
+            }
+            // FIX-2: extract r,g,b as comma-separated string for rgba(var(--primary-rgb), opacity)
+            function hexToRgb(hex) {
+                const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+                return `${r},${g},${b}`;
+            }
+
+            function initMathFields() {
+                const layout = (CONFIG.game_config || {}).math_keyboard_layout;
+                function configureMathField(mf) {
+                    if (!mf) return;
+                    mf.mathVirtualKeyboardPolicy = 'manual';
+                    mf.addEventListener('focusin', () => {
+                        if (layout && layout.layouts) mathVirtualKeyboard.layouts = layout.layouts;
+                        mathVirtualKeyboard.show();
+                    });
+                    mf.addEventListener('focusout', () => setTimeout(() => mathVirtualKeyboard.hide(), 200));
+                }
+                configureMathField(document.getElementById('chat-math-field'));
+            }
+
+            function initGameState(data) {
+                const gc = data.game_config;
+                S.player.tokens = gc.token_start || 100;
+                if (gc.use_lives && gc.max_lives) S.player.lives = gc.max_lives;
+                (data.starting_items || []).forEach(id => { if (!S.player.inventory.includes(id)) S.player.inventory.push(id); });
+                S.quest_statuses = { ...(data.starting_quests || {}) };
+                S.unlocked_npcs = [...(data.unlocked_npcs || [])];
+                document.title = gc.game_title || 'นครธนา Universe';
+                document.getElementById('loading-title').textContent = gc.game_title;
+                document.getElementById('hud-title').textContent = gc.game_title;
+                document.getElementById('hud-emoji').textContent = gc.game_emoji || '🎲';
+                document.getElementById('world-name').textContent = gc.world_name || '';
+                const worldLaw = document.getElementById('world-law-box');
+                if (worldLaw) {
+                    const formulaRaw = gc.math_formula || '';
+                    worldLaw.innerHTML = renderBubbleContent(`**$${formulaRaw}$** — ${gc.world_law_th || ''}`);
+                }
+                document.getElementById('npc-count-badge').textContent = `${Object.keys(data.npcs || {}).length} NPCs`;
+                document.getElementById('name-screen-emoji').textContent = gc.game_emoji || '🎲';
+                document.getElementById('name-role-badge').textContent = gc.player_role || 'นักเรียน';
+                document.getElementById('name-role-desc').textContent = gc.player_role_desc || '';
+                // ADD-3: Show comparator button only when has_investigation
+                if (gc.has_investigation) {
+                    document.getElementById('btn-comparator')?.classList.remove('hidden');
+                    document.getElementById('evidence-tracker')?.classList.remove('hidden');
+                    buildComparatorTable();
+                }
+                updateHUD();
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  INTRO SLIDES
+            // ══════════════════════════════════════════════════════════════
+            let _introIdx = 0, _introSlides = [];
+            function buildIntroSlides(slides) {
+                _introSlides = slides || [];
+                const container = document.getElementById('intro-slides-container');
+                const dots = document.getElementById('intro-dots');
+                container.innerHTML = ''; dots.innerHTML = '';
+                _introSlides.forEach((s, i) => {
+                    const div = document.createElement('div');
+                    div.className = `intro-slide${i === 0 ? ' active' : ''}`;
+                    div.innerHTML = `<div class="intro-emoji">${s.emoji}</div><div class="intro-title">${s.title}</div><div class="intro-content">${renderBubbleContent(s.content)}</div>`;
+                    container.appendChild(div);
+                    const dot = document.createElement('div');
+                    dot.className = `intro-dot${i === 0 ? ' active' : ''}`;
+                    dots.appendChild(dot);
+                });
+            }
+            function nextIntroSlide() {
+                const slides = document.querySelectorAll('.intro-slide');
+                const dots = document.querySelectorAll('.intro-dot');
+                slides[_introIdx].classList.remove('active'); dots[_introIdx].classList.remove('active');
+                _introIdx++;
+                if (_introIdx >= _introSlides.length) { showScreen('name'); return; }
+                slides[_introIdx].classList.add('active'); dots[_introIdx].classList.add('active');
+                if (_introIdx === _introSlides.length - 1) document.getElementById('btn-intro-next').textContent = 'เริ่มเลย! 🔍';
+            }
+            document.getElementById('btn-intro-next').addEventListener('click', nextIntroSlide);
+
+            // ══════════════════════════════════════════════════════════════
+            //  NAME SCREEN
+            // ══════════════════════════════════════════════════════════════
+            const nameInput = document.getElementById('input-player-name');
+            const startBtn = document.getElementById('btn-start-game');
+            nameInput.addEventListener('input', () => { startBtn.disabled = nameInput.value.trim().length < 1; });
+            nameInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !startBtn.disabled) startGame(); });
+            startBtn.addEventListener('click', startGame);
+            function startGame() {
+                const name = nameInput.value.trim();
+                if (!name) return;
+                S.player.name = name;
+                showScreen('game');
+                setPhase('npc_selection');
+                renderNPCGrid(); renderQuestLog(); renderInventory(); renderLOProgress(); renderEvidenceTracker();
+                switchTab('world');
+                initMathFields();
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  SCREEN & PHASE MANAGEMENT
+            // ══════════════════════════════════════════════════════════════
+            function showScreen(name) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                const map = { loading: 'screen-loading', intro: 'screen-intro', name: 'screen-name', game: 'screen-game', complete: 'screen-complete' };
+                document.getElementById(map[name])?.classList.add('active');
+            }
+
+            // ADD-4: Investigation phase — build phase list dynamically
+            function buildPhaseDefs() {
+                const gc = CONFIG.game_config || {};
+                const defs = [
+                    { key: 'briefing', label: 'BRIEF' },
+                    { key: 'npc_selection', label: 'NPC' },
+                    { key: 'knowledge_check', label: 'KC' },
+                    { key: 'npc_chat', label: 'CHAT' },
+                ];
+                if (gc.has_investigation) {
+                    defs.push({ key: 'investigate', label: 'INVEST' });
+                }
+                defs.push({ key: 'quest_result', label: 'RESULT' });
+                defs.push({ key: 'final_quest', label: 'FINAL' });
+                return defs;
+            }
+
+            function setPhase(phase) {
+                S.current_phase = phase;
+                const banner = document.getElementById('phase-banner');
+                if (!banner) return;
+                const PHASE_DEFS = buildPhaseDefs();
+                const curIdx = PHASE_DEFS.findIndex(p => p.key === phase);
+                banner.innerHTML = PHASE_DEFS.map((p, i) => {
+                    const cls = i < curIdx ? 'done' : i === curIdx ? 'active' : '';
+                    const sep = i < PHASE_DEFS.length - 1 ? `<span class="phase-sep">—</span>` : '';
+                    return `<div class="phase-step-item ${cls}"><div class="phase-dot-item"></div><span>${p.label}</span></div>${sep}`;
+                }).join('');
+            }
+
+            function switchTab(tab) {
+                _activeTab = tab;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+                document.querySelectorAll('.game-tab-panel').forEach(p => p.classList.remove('active'));
+                document.getElementById(`panel-${tab}`)?.classList.add('active');
+            }
+            function switchTerminalTab(tab) {
+                _terminalTab = tab;
+                document.querySelectorAll('.terminal-tab').forEach(b => b.classList.toggle('active', b.id === `ttab-${tab}`));
+                document.querySelectorAll('.terminal-tab-panel').forEach(p => p.classList.remove('active'));
+                document.getElementById(`tpanel-${tab}`)?.classList.add('active');
+            }
+            function filterQuests(filter) {
+                _questFilter = filter;
+                document.querySelectorAll('.quest-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === filter));
+                renderQuestLog();
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  HUD
+            // ══════════════════════════════════════════════════════════════
+            function updateHUD() {
+                const xp = S.player.xp, level = S.player.level;
+                const xpPrev = (level - 1) * XP_PER_LEVEL;
+                const pct = Math.min(100, Math.round(((xp - xpPrev) / XP_PER_LEVEL) * 100));
+                document.getElementById('hud-level-label').textContent = `Lv.${level}`;
+                document.getElementById('hud-xp-label').textContent = `${xp - xpPrev} / ${XP_PER_LEVEL} XP`;
+                document.getElementById('hud-xp-fill').style.width = pct + '%';
+                const sym = (CONFIG.game_config || {}).token_symbol || 'EP';
+                document.getElementById('hud-tokens').textContent = `🔍 ${S.player.tokens} ${sym}`;
+            }
+            function gainXP(amount) {
+                if (!amount || amount <= 0) return;
+                S.player.xp += amount;
+                const newLevel = Math.floor(S.player.xp / XP_PER_LEVEL) + 1;
+                if (newLevel > S.player.level) { S.player.level = newLevel; toast(`🎉 Level Up! → Lv.${newLevel}`, 'success'); }
+                updateHUD(); floatXP(`+${amount} XP`);
+            }
+            function spendTokens(amount) { S.player.tokens = Math.max(0, S.player.tokens - amount); updateHUD(); }
+            function gainTokens(amount) { if (!amount) return; S.player.tokens += amount; updateHUD(); }
+
+            // ══════════════════════════════════════════════════════════════
+            //  ADD-1: EVIDENCE TRACKER
+            // ══════════════════════════════════════════════════════════════
+            let _prevEvidenceCount = 0;
+            function renderEvidenceTracker() {
+                const tracker = document.getElementById('evidence-tracker');
+                if (!tracker) return;
+                const gc = CONFIG.game_config || {};
+                if (!gc.has_investigation) { tracker.classList.add('hidden'); return; }
+                tracker.classList.remove('hidden');
+
+                const items = CONFIG.items || {};
+                const slots = document.getElementById('evidence-slots');
+                const countEl = document.getElementById('evidence-count');
+                const banner = document.getElementById('evidence-complete-banner');
+                if (!slots) return;
+
+                let earnedCount = 0;
+                slots.innerHTML = '';
+                EVIDENCE_IDS.forEach((id, i) => {
+                    const item = items[id];
+                    const earned = S.player.inventory.includes(id);
+                    if (earned) earnedCount++;
+                    const slot = document.createElement('div');
+                    slot.className = `evidence-slot${earned ? ' unlocked' : ''}`;
+                    if (earned && earnedCount > _prevEvidenceCount) slot.classList.add('new-unlock');
+                    slot.innerHTML = earned
+                        ? `<div class="evidence-slot-emoji">${item ? item.emoji : '🔍'}</div><div class="evidence-slot-name">${item ? item.name_th : `Evidence ${i + 1}`}</div>`
+                        : `<div class="evidence-slot-lock">🔒</div><div class="evidence-slot-name" style="color:var(--border)">Evidence ${i + 1}</div>`;
+                    slots.appendChild(slot);
+                });
+
+                if (countEl) {
+                    countEl.textContent = `${earnedCount} / 3`;
+                    countEl.className = `evidence-count-badge${earnedCount >= 3 ? ' complete' : ''}`;
+                }
+                if (banner) banner.classList.toggle('show', earnedCount >= 3);
+                _prevEvidenceCount = earnedCount;
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  NPC GRID
+            // ══════════════════════════════════════════════════════════════
+            function renderNPCGrid() {
+                const grid = document.getElementById('npc-grid');
+                if (!grid || !CONFIG.npcs) return;
+                grid.innerHTML = '';
+                for (const [id, npc] of Object.entries(CONFIG.npcs)) {
+                    const isUnlocked = S.unlocked_npcs.includes(id);
+                    const questId = npc.associated_quest;
+                    const questStatus = questId ? (S.quest_statuses[questId] || 'locked') : 'n/a';
+                    const isCompleted = questStatus === 'completed';
+                    const hasActiveQ = isUnlocked && !isCompleted && (questStatus === 'available' || questStatus === 'active');
+                    const mentorLvl = S.mentor_levels[id] || 0;
+
+                    let classes = 'npc-card';
+                    if (!isUnlocked) classes += ' locked';
+                    else if (isCompleted && !npc.is_mentor) classes += ' completed';
+                    else if (hasActiveQ) classes += ' has-active-quest';
+
+                    let unlockHint = '';
+                    if (!isUnlocked) {
+                        const cond = npc.unlock_condition;
+                        if (cond === 'after_quest' && npc.unlock_requires_quest) {
+                            const q = (CONFIG.quests || {})[npc.unlock_requires_quest];
+                            unlockHint = `ต้องสำเร็จ: ${q ? q.title_th : npc.unlock_requires_quest}`;
+                        } else if (cond === 'after_item' && npc.unlock_requires_item) {
+                            const item = (CONFIG.items || {})[npc.unlock_requires_item];
+                            unlockHint = `ต้องมี: ${item ? item.name_th : npc.unlock_requires_item}`;
+                        } else if (cond === 'after_npc' && npc.unlock_requires_npc) {
+                            const n2 = CONFIG.npcs[npc.unlock_requires_npc];
+                            unlockHint = `ต้องพบ: ${n2 ? n2.display_name : npc.unlock_requires_npc}`;
+                        } else if (cond === 'after_quests') {
+                            unlockHint = 'ต้องสำเร็จหลายเงื่อนไข';
+                        }
+                    }
+                    const archetypeClass = `archetype-${npc.archetype}`;
+                    const archetypeName = archetypeLabel(npc.archetype);
+                    const mentorBadge = npc.is_mentor && mentorLvl > 0 ? `<span style="font-size:.65rem;color:var(--success);margin-top:2px;">🔮 Lv.${mentorLvl}</span>` : '';
+
+                    let statusBadge = '';
+                    if (!isUnlocked) statusBadge = `<span class="npc-status-badge npc-badge-locked">🔒 LOCK</span>`;
+                    else if (isCompleted && !npc.is_mentor) statusBadge = `<span class="npc-status-badge npc-badge-done">✅ DONE</span>`;
+                    else if (hasActiveQ) statusBadge = `<span class="npc-status-badge npc-badge-quest">📌 QUEST</span>`;
+                    else statusBadge = `<span class="npc-status-badge npc-badge-talk">💬 TALK</span>`;
+
+                    const card = document.createElement('div');
+                    card.className = classes; card.dataset.npcId = id;
+                    card.innerHTML = `${statusBadge}<div class="npc-avatar-wrap"><div class="npc-avatar">${npc.avatar_emoji}</div><div class="npc-quest-dot"></div><div class="npc-completed-badge">✓</div>${!isUnlocked ? '<div class="npc-lock-icon">🔒</div>' : ''}</div><div class="npc-name">${npc.display_name}</div><div class="npc-title">${npc.title_th}</div><span class="npc-archetype-tag ${archetypeClass}">${archetypeName}</span>${mentorBadge}${!isUnlocked ? `<div class="npc-unlock-hint">${unlockHint}</div>` : ''}`;
+                    if (isUnlocked) card.addEventListener('click', () => openNPC(id));
+                    grid.appendChild(card);
+                }
+            }
+            function archetypeLabel(a) {
+                const map = { gatekeeper: 'Gatekeeper', mentor_with_secret: 'Mentor', unreliable_witness: 'Witness', rival: 'Rival', quest_giver: 'Quest Giver', trickster: 'Trickster' };
+                return map[a] || a;
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  QUEST LOG
+            // ══════════════════════════════════════════════════════════════
+            function renderQuestLog() {
+                const list = document.getElementById('quest-list');
+                if (!list || !CONFIG.quests) return;
+                const QUEST_ICONS = { trial: '⚔️', discovery: '🔍', rescue: '🤝', dilemma: '⚖️', investigation: '🔬', creation: '✍️' };
+                const BLOOM_TH = { remember: 'จำ', understand: 'เข้าใจ', apply: 'ประยุกต์', analyze: 'วิเคราะห์', evaluate: 'ประเมิน', create: 'สร้าง' };
+                let doneCount = 0;
+                const entries = Object.entries(CONFIG.quests).filter(([id, q]) => {
+                    const st = S.quest_statuses[id] || q.starting_status || 'locked';
+                    if (st === 'completed') doneCount++;
+                    if (_questFilter === 'all') return true;
+                    if (_questFilter === 'available') return st === 'available' || st === 'active';
+                    if (_questFilter === 'completed') return st === 'completed';
+                    if (_questFilter === 'locked') return st === 'locked';
+                    return true;
+                });
+                document.getElementById('quest-done-count').textContent = `${doneCount} สำเร็จ`;
+                list.innerHTML = '';
+                if (!entries.length) { list.innerHTML = `<div class="empty-state"><span class="empty-state-icon">📭</span>ไม่มีภารกิจ</div>`; return; }
+                for (const [id, q] of entries) {
+                    const st = S.quest_statuses[id] || q.starting_status || 'locked';
+                    const icon = QUEST_ICONS[q.archetype] || '📌';
+                    let statusIcon = '', classes = 'quest-card';
+                    if (st === 'completed') { statusIcon = '✅'; classes += ' completed-quest'; }
+                    else if (st === 'locked') { statusIcon = '🔒'; classes += ' locked-quest'; }
+                    else if (S.active_quest_id === id) { statusIcon = '▶️'; classes += ' active-quest'; }
+                    const typeTag = `<span class="quest-tag tag-${q.type}">${q.type === 'main' ? 'Main' : q.type === 'side' ? 'Side' : 'Final'}</span>`;
+                    const bloomTag = `<span class="quest-tag tag-bloom">${BLOOM_TH[q.bloom_level] || q.bloom_level}</span>`;
+                    const lockTag = st === 'locked' ? `<span class="quest-tag tag-locked">🔒 ล็อก</span>` : '';
+                    const doneTag = st === 'completed' ? `<span class="quest-tag tag-done">✅ สำเร็จ</span>` : '';
+                    const card = document.createElement('div');
+                    card.className = classes;
+                    card.innerHTML = `<div class="quest-card-header"><div class="quest-icon">${icon}</div><div class="quest-info"><div class="quest-title">${q.title_th}</div><div class="quest-meta">${typeTag}${bloomTag}${lockTag}${doneTag}</div></div><div class="quest-status-icon">${statusIcon}</div></div>`;
+                    if (st !== 'locked') {
+                        card.addEventListener('click', () => {
+                            const npcId = q.required_npc;
+                            if (npcId && S.unlocked_npcs.includes(npcId)) openNPC(npcId, id);
+                            else if (q.type === 'final') openFinalQuest(id);
+                            else showQuestDetail(id, q);
+                        });
+                    }
+                    list.appendChild(card);
+                }
+            }
+            function showQuestDetail(questId, q) {
+                const detail = document.getElementById('quest-detail-view');
+                if (!detail) return;
+                const BLOOM_TH = { remember: 'จำ', understand: 'เข้าใจ', apply: 'ประยุกต์', analyze: 'วิเคราะห์', evaluate: 'ประเมิน', create: 'สร้าง' };
+                const stages = (q.stages_th || []).map((s, i) => `<div class="quest-stage"><div class="stage-num">${i + 1}</div><div>${renderBubbleContent(s)}</div></div>`).join('');
+                const los = (q.learning_objectives || []).map(lo => `<span class="lo-chip">${lo}</span>`).join('');
+                detail.innerHTML = `<div class="quest-detail-title">${q.title_th}</div><div style="font-size:.8rem;color:var(--muted);">Bloom's: <strong style="color:var(--accent)">${BLOOM_TH[q.bloom_level] || q.bloom_level}</strong> | ${q.archetype}</div><div class="quest-stages-list">${stages}</div>${los ? `<div><div style="font-size:.72rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:6px;">LEARNING OBJECTIVES</div><div class="quest-lo-list">${los}</div></div>` : ''}`;
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  INVENTORY
+            // ══════════════════════════════════════════════════════════════
+            function renderInventory() {
+                const items = CONFIG.items || {};
+                const inv = S.player.inventory;
+                const badges = S.player.badges;
+                const frags = S.player.fragments;
+                const allItems = [...inv, ...frags].filter(id => { const item = items[id]; return item && item.type !== 'mastery_badge'; });
+                const renderGrid = (ids, targetId) => {
+                    const el = document.getElementById(targetId);
+                    if (!el) return;
+                    el.innerHTML = '';
+                    if (!ids.length) { el.innerHTML = `<div style="font-size:.8rem;color:var(--muted);grid-column:1/-1;padding:8px 0;">ยังไม่มีไอเทม</div>`; return; }
+                    ids.forEach(id => {
+                        const item = items[id]; if (!item) return;
+                        const chip = document.createElement('div');
+                        chip.className = `item-chip${item.type === 'mastery_badge' ? ' badge' : ''}`;
+                        chip.innerHTML = `<div class="item-chip-emoji">${item.emoji}</div><div class="item-chip-name">${item.name_th}</div>`;
+                        chip.addEventListener('click', () => openItemDetail(id));
+                        el.appendChild(chip);
+                    });
+                };
+                renderGrid(allItems, 'inv-grid-mob'); renderGrid(allItems, 'inv-grid-desk'); renderGrid(badges, 'badge-grid-mob');
+                const total = inv.length + badges.length + frags.length;
+                ['inv-count-mob', 'inv-count-desk'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = total; });
+            }
+            function renderLOProgress() {
+                const loList = document.getElementById('lo-progress-list');
+                if (!loList || !CONFIG.game_config) return;
+                const los = CONFIG.game_config.learning_objectives || [];
+                loList.innerHTML = '';
+                los.forEach(lo => {
+                    const done = isLOCompleted(lo.id);
+                    const div = document.createElement('div');
+                    div.style.cssText = 'display:flex;align-items:center;gap:10px;font-size:.82rem;';
+                    div.innerHTML = `<span style="color:${done ? 'var(--success)' : 'var(--border)'};font-size:1rem;">${done ? '✅' : '⬜'}</span><span style="flex:1;color:${done ? 'var(--text)' : 'var(--muted)'};">${lo.desc_th}</span><span class="lo-chip">${lo.id}</span>`;
+                    loList.appendChild(div);
+                });
+            }
+            function isLOCompleted(loId) {
+                return Object.entries(CONFIG.quests || {}).some(([qId, q]) => (q.learning_objectives || []).includes(loId) && S.completed_quests.includes(qId));
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  ADD-3: GEOMETRIC COMPARATOR
+            // ══════════════════════════════════════════════════════════════
+            function buildComparatorTable() {
+                const tbody = document.getElementById('comparator-tbody');
+                const noteEl = document.getElementById('comparator-note');
+                if (!tbody) return;
+                const a1 = 100, r = 2, d = 100, n = 6;
+                tbody.innerHTML = '';
+                for (let i = 1; i <= n; i++) {
+                    const arith = a1 + (i - 1) * d;
+                    const geo = a1 * Math.pow(r, i - 1);
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td class="col-n">${i}</td><td class="col-arith">฿${arith.toLocaleString()}</td><td class="col-geo">฿${geo.toLocaleString()}</td>`;
+                    tbody.appendChild(tr);
+                }
+                if (noteEl) noteEl.innerHTML = renderBubbleContent(
+                    `$a_1=100$ บาท | Arithmetic: $d=100$ | Geometric: $r=2$\n\nGeometric เติบโตแบบ **ทวีคูณ** — ต่างกันมากขึ้นทุก Pull`
+                );
+            }
+            function toggleComparatorPopup() {
+                _comparatorOpen ? closeComparatorPopup() : openComparatorPopup();
+            }
+            function openComparatorPopup() {
+                closeFormulaPopup();
+                _comparatorOpen = true;
+                document.getElementById('comparator-popup')?.classList.add('open');
+                document.getElementById('btn-comparator')?.classList.add('active');
+            }
+            function closeComparatorPopup() {
+                _comparatorOpen = false;
+                document.getElementById('comparator-popup')?.classList.remove('open');
+                document.getElementById('btn-comparator')?.classList.remove('active');
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  NPC TERMINAL
+            // ══════════════════════════════════════════════════════════════
+            function openNPC(npcId, questIdOverride) {
+                if (!CONFIG.npcs[npcId]) return;
+                _activeNPCId = npcId;
+                S.active_npc_id = npcId;
+                const npc = CONFIG.npcs[npcId];
+                const questId = questIdOverride || npc.associated_quest;
+                if (questId) S.active_quest_id = questId;
+
+                // ADD-2: Track archetype for rival visual
+                _currentNPCArchetype = npc.archetype;
+                const header = document.getElementById('terminal-header');
+                if (header) header.classList.toggle('rival-mode', npc.archetype === 'rival');
+                // Adjust avatar glow for rival
+                const avatarEl = document.querySelector('.terminal-npc-avatar');
+                if (avatarEl) avatarEl.style.boxShadow = npc.archetype === 'rival' ? '0 0 12px rgba(239,68,68,.4)' : '0 0 12px var(--primary-glow)';
+
+                document.getElementById('term-avatar').textContent = npc.avatar_emoji;
+                document.getElementById('term-name').textContent = npc.display_name;
+                document.getElementById('term-title').textContent = npc.title_th;
+                const arcEl = document.getElementById('term-archetype');
+                arcEl.textContent = archetypeLabel(npc.archetype);
+                arcEl.className = `npc-archetype-tag archetype-${npc.archetype}`;
+
+                const questObj = (CONFIG.quests || {})[questId];
+                document.getElementById('chat-quest-name').textContent = questObj ? questObj.title_th : 'สนทนาทั่วไป';
+                updateTurnsBadge();
+                if (questObj) showQuestDetail(questId, questObj);
+
+                document.getElementById('modal-npc').classList.add('open');
+                setPhase('npc_chat');
+                switchTerminalTab('chat');
+
+                // FIX-1: Always init chat first, then enter KC mode if needed
+                _kcPassed = false;
+                _inKCMode = false;
+                exitKCMode(); // ensure clean state
+                initChatView(npcId);
+
+                // SYNC-1: shouldShowKC safeguard
+                if (shouldShowKC(npcId, questId)) {
+                    setTimeout(() => enterKCMode(questId), 400); // slight delay so opening msg renders
+                }
+            }
+
+            // SYNC-1: Fixed shouldShowKC — safeguard for missing kc_bank
+            function shouldShowKC(npcId, questId) {
+                if (!questId) return false;
+                const kc = CONFIG.kc_bank;
+                if (!kc || !kc[questId]) return false;
+                const status = S.quest_statuses[questId];
+                return status !== 'completed';
+            }
+
+            function closeNPC() {
+                document.getElementById('modal-npc').classList.remove('open');
+                // ADD-2: SYNC-4: Reset rival styling on close
+                document.getElementById('terminal-header')?.classList.remove('rival-mode');
+                _currentNPCArchetype = null;
+                _activeNPCId = null;
+                S.active_npc_id = null;
+                _kcPassed = false;
+                _inKCMode = false;
+                _currentKCQuest = null;
+                _kcParams = null;
+                _streaming = false;
+                exitKCMode();
+                closeFormulaPopup();
+                closeComparatorPopup();
+                if (S.current_phase === 'npc_chat' || S.current_phase === 'knowledge_check') setPhase('npc_selection');
+            }
+
+            function initChatView(npcId) {
+                const npc = CONFIG.npcs[npcId];
+                const history = S.npc_chat_history[npcId] || [];
+                const msgArea = document.getElementById('chat-messages');
+                msgArea.innerHTML = `<div class="typing-indicator" id="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+                if (history.length === 0) {
+                    appendBubble('npc', npc.opening_message_th, npc.display_name);
+                } else {
+                    history.forEach(msg => {
+                        const role = msg.role === 'user' ? 'player' : 'npc';
+                        appendBubble(role, msg.content, msg.role === 'user' ? S.player.name : npc.display_name);
+                    });
+                }
+                document.getElementById('chat-input')?.focus();
+            }
+
+            // ── KC Mode: uses normal textarea, no input swap ──────────────
+            async function enterKCMode(questId) {
+                _inKCMode = true;
+                _currentKCQuest = questId;
+                setPhase('knowledge_check');
+
+                // DP-2: Yellow border signals KC mode to player
+                const textarea = document.getElementById('chat-input');
+                if (textarea) textarea.classList.add('kc-mode');
+
+                // Show hint button in quest-bar
+                document.getElementById('btn-kc-hint-bar')?.classList.remove('hidden');
+
+                // Generate question locally (no API call for mq_01)
+                let questionText = generateKCQuestion(questId);
+                if (!questionText) {
+                    // Fallback: API generate for quests not in local bank
+                    try {
+                        const data = await api('/api/knowledge-check/generate', 'POST', { quest_id: questId, game_state: S });
+                        questionText = data.question || 'ตอบคำถามก่อนเริ่มสนทนา';
+                    } catch (e) {
+                        questionText = 'ระบุ $r$ และคำนวณ $a_n$ จาก Pull Sequence ที่เห็น';
+                    }
+                }
+
+                appendBubble('kc-question', questionText, CONFIG.npcs[_activeNPCId]?.display_name || 'ระบบ');
+                scrollChatToBottom();
+                setTimeout(() => textarea?.focus(), 150);
+            }
+
+            function exitKCMode() {
+                _inKCMode = false;
+                _kcParams = null;
+                const textarea = document.getElementById('chat-input');
+                if (textarea) textarea.classList.remove('kc-mode');
+                document.getElementById('btn-kc-hint-bar')?.classList.add('hidden');
+                setTimeout(() => textarea?.focus(), 100);
+            }
+
+            // Static hint — no API call, explains r for first-time learners
+            function showKCHint() {
+                const bank = KC_QUESTION_BANK[_currentKCQuest];
+                const hintText = bank?.hint_th ||
+                    '💡 Hint: ลองหาร Pull ที่ 2 ÷ Pull ที่ 1 เพื่อหาค่า $r$';
+                appendBubble('system', hintText, 'Hint');
+                scrollChatToBottom();
+            }
+
+            // submitKC — reads textarea, uses local eval for mq_01 (no API)
+            async function submitKC() {
+                const textarea = document.getElementById('chat-input');
+                const answer = textarea ? textarea.value.trim() : '';
+                if (!answer || !_currentKCQuest) { toast('กรุณาพิมพ์คำตอบก่อน', 'error'); return; }
+
+                // Clear textarea immediately
+                if (textarea) { textarea.value = ''; autoResizeTextarea(textarea); }
+
+                // Show answer as player bubble
+                appendBubble('player', answer, S.player.name);
+
+                let result;
+                if (_kcParams && KC_QUESTION_BANK[_currentKCQuest]) {
+                    // Local evaluation — no API call
+                    result = evaluateKCLocally(answer, _kcParams);
+                } else {
+                    // API evaluation for quests not in local bank
+                    try {
+                        result = await api('/api/knowledge-check/evaluate', 'POST', {
+                            quest_id: _currentKCQuest,
+                            student_answer: answer,
+                            question_text: '',
+                            game_state: S,
+                        });
+                    } catch (e) {
+                        toast('เกิดข้อผิดพลาด ลองใหม่', 'error');
+                        return;
+                    }
+                }
+
+                if (result.passed) {
+                    appendBubble('kc-pass', result.feedback_th || '✅ ผ่าน! เริ่มสนทนาได้เลย', 'ระบบ KC');
+                    _kcPassed = true;
+                    exitKCMode();
+                    setPhase('npc_chat');
+                    toast('✅ ผ่าน Knowledge Gate!', 'success');
+                } else {
+                    appendBubble('kc-fail', result.feedback_th || '❌ ยังไม่ถูกต้อง ลองใหม่', 'ระบบ KC');
+                    // Re-generate question after brief pause
+                    setTimeout(() => enterKCMode(_currentKCQuest), 1800);
+                }
+            }
+
+            // ── Chat: Send Message ────────────────────────────────────────
+            async function sendMessage() {
+                // Route to KC evaluation when in KC mode
+                if (_inKCMode) { await submitKC(); return; }
+                if (_streaming) return;
+                const input = document.getElementById('chat-input');
+                const message = input.value.trim();
+                if (!message || !_activeNPCId) return;
+                input.value = ''; autoResizeTextarea(input);
+                const npc = CONFIG.npcs[_activeNPCId];
+                appendBubble('player', message, S.player.name);
+                if (!S.npc_chat_history[_activeNPCId]) S.npc_chat_history[_activeNPCId] = [];
+                S.npc_chat_history[_activeNPCId].push({ role: 'user', content: message });
+                S.npc_chat_turns[_activeNPCId] = (S.npc_chat_turns[_activeNPCId] || 0) + 1;
+                S.turn_count++;
+                updateTurnsBadge();
+                _streaming = true;
+                document.getElementById('btn-send').disabled = true;
+                showTyping();
+                try { await streamNPC(_activeNPCId, message); }
+                finally { _streaming = false; document.getElementById('btn-send').disabled = false; hideTyping(); }
+            }
+
+            async function streamNPC(npcId, playerMessage) {
+                const response = await fetch('/api/npc/chat', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ npc_id: npcId, player_message: playerMessage, game_state: S, quest_id: S.active_quest_id }),
+                });
+                if (!response.ok) { appendBubble('system', '❌ เกิดข้อผิดพลาด กรุณาลองใหม่', 'System', false, true); return; }
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '', fullText = '', bubbleEl = null;
+                hideTyping();
+                const npc = CONFIG.npcs[npcId];
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n'); buffer = lines.pop();
+                    for (const line of lines) {
+                        if (!line.startsWith('data: ')) continue;
+                        const raw = line.slice(6).trim();
+                        if (raw === '[DONE]') break;
+                        try {
+                            const chunk = JSON.parse(raw);
+                            if (chunk.type === 'text') {
+                                if (!bubbleEl) bubbleEl = appendBubble('npc', '', npc.display_name, false, true);
+                                fullText += chunk.text;
+                                const textDiv = bubbleEl?.querySelector('.bubble-text');
+                                if (textDiv) { textDiv.textContent = fullText; textDiv.classList.add('streaming'); }
+                                scrollChatToBottom();
+                            } else if (chunk.type === 'game_event') {
+                                if (bubbleEl) {
+                                    const textDiv = bubbleEl?.querySelector('.bubble-text');
+                                    if (textDiv) {
+                                        textDiv.classList.remove('streaming');
+                                        textDiv.innerHTML = renderBubbleContent(chunk.full_text || fullText);
+                                        scrollChatToBottom();
+                                    }
+                                }
+                                const cleanText = chunk.full_text || fullText;
+                                S.npc_chat_history[npcId].push({ role: 'assistant', content: cleanText });
+                                await handleGameEvent(npcId, chunk.tags, cleanText);
+                            } else if (chunk.type === 'error') {
+                                appendBubble('system', `❌ ${chunk.message}`, 'System', false, true);
+                            }
+                        } catch (e) { }
+                    }
+                }
+            }
+
+            async function handleGameEvent(npcId, tags, fullText) {
+                if (!tags) return;
+                const questId = S.active_quest_id;
+                if (tags.quest_status === 'completed') {
+                    const outcome = tags.outcome || 'success';
+                    await completeQuest(questId, npcId, outcome);
+                }
+                if (tags.mentor_level_unlocked !== undefined) {
+                    S.mentor_levels[npcId] = tags.mentor_level_unlocked;
+                    await awardMentorLevel(npcId, tags.mentor_level_unlocked);
+                } else if (tags.mentor_level !== undefined) {
+                    const npc = CONFIG.npcs[npcId];
+                    if (npc && npc.is_mentor) await checkMentorUnlock(npcId, fullText);
+                }
+            }
+
+            async function checkMentorUnlock(npcId, lastMessage) {
+                try {
+                    const data = await api('/api/npc/mentor-unlock', 'POST', { npc_id: npcId, game_state: S, last_message: lastMessage });
+                    if (data.qualified && data.new_level > (S.mentor_levels[npcId] || 0)) {
+                        S.mentor_levels[npcId] = data.new_level;
+                        await awardMentorLevel(npcId, data.new_level, data.secret_th);
+                        if (data.xp_gained) gainXP(data.xp_gained);
+                        if (data.tokens_gained) gainTokens(data.tokens_gained);
+                        if (data.items_gained?.length) { data.items_gained.forEach(id => addToInventory(id)); renderInventory(); renderEvidenceTracker(); }
+                    }
+                } catch (e) { }
+            }
+
+            function awardMentorLevel(npcId, level, secretText) {
+                const npc = CONFIG.npcs[npcId]; if (!npc) return;
+                const badge = `<span class="mentor-level-badge">🔮 Mentor Level ${level} Unlocked</span>`;
+                const secretRendered = secretText ? renderBubbleContent(secretText) : '';
+                const secretDiv = secretRendered ? `<div class="mentor-secret-bubble">${secretRendered}</div>` : '';
+                appendBubble('system', badge + secretDiv, npc.display_name, false, true);
+                toast(`🔮 Mentor Level ${level} ปลดล็อก!`, 'success');
+            }
+
+            async function completeQuest(questId, npcId, outcome) {
+                if (!questId) return;
+                if (S.completed_quests.includes(questId) && outcome !== 'consequence_triggered') return;
+                setPhase('quest_result');
+                if (outcome === 'consequence_triggered') {
+                    try {
+                        const data = await api('/api/consequence/check', 'POST', { quest_id: questId, npc_id: npcId, outcome, game_state: S });
+                        if (data.has_consequence) {
+                            await runConsequenceChain(data);
+                            if (!data.allow_retry) { S.completed_quests.push(questId); S.quest_statuses[questId] = 'completed'; }
+                            setPhase('npc_selection'); updateAfterQuest(questId); return;
+                        }
+                    } catch (e) { }
+                }
+                try {
+                    const data = await api('/api/quest/complete', 'POST', { quest_id: questId, npc_id: npcId, outcome, game_state: S });
+                    if (!S.completed_quests.includes(questId)) S.completed_quests.push(questId);
+                    S.quest_statuses[questId] = 'completed';
+                    applyRewards(data);
+                    showRewardModal(data, questId);
+                } catch (e) { toast('ไม่สามารถบันทึกผลภารกิจ', 'error'); }
+            }
+
+            function applyRewards(data) {
+                if (data.xp_gained) gainXP(data.xp_gained);
+                if (data.tokens_gained) gainTokens(data.tokens_gained);
+                (data.items_gained || []).forEach(id => addToInventory(id));
+                (data.badges_gained || []).forEach(id => addBadge(id));
+                (data.fragments_gained || []).forEach(id => addFragment(id));
+                (data.unlock_npcs || []).forEach(id => unlockNPC(id));
+                (data.unlock_quests || []).forEach(id => { if (S.quest_statuses[id] === 'locked') S.quest_statuses[id] = 'available'; });
+                // ADD-4: Set investigate phase when evidence fragment gained
+                if ((data.items_gained || []).some(id => EVIDENCE_IDS.includes(id))) setPhase('investigate');
+            }
+
+            function addToInventory(id) { if (!S.player.inventory.includes(id)) S.player.inventory.push(id); }
+            function addBadge(id) { if (!S.player.badges.includes(id)) S.player.badges.push(id); }
+            function addFragment(id) { if (!S.player.fragments.includes(id)) S.player.fragments.push(id); }
+            function unlockNPC(id) {
+                if (!S.unlocked_npcs.includes(id)) {
+                    S.unlocked_npcs.push(id);
+                    const npc = CONFIG.npcs[id];
+                    if (npc) toast(`🔓 NPC ปลดล็อก: ${npc.display_name}`, 'info');
+                }
+            }
+
+            function updateAfterQuest(questId) {
+                checkNewUnlocks();
+                renderNPCGrid(); renderQuestLog(); renderInventory(); renderLOProgress();
+                renderEvidenceTracker(); // ADD-1: update evidence tracker
+                checkGameComplete();
+            }
+
+            async function checkNewUnlocks() {
+                try {
+                    const data = await api('/api/npc/check-available', 'POST', S);
+                    (data.newly_available || []).forEach(npc => unlockNPC(npc.id));
+                } catch (e) { }
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  REWARD MODAL
+            // ══════════════════════════════════════════════════════════════
+            function showRewardModal(data, questId) {
+                const quest = (CONFIG.quests || {})[questId];
+                const isFinal = quest?.type === 'final';
+                document.getElementById('reward-emoji').textContent = isFinal ? '🏆' : '🎁';
+                document.getElementById('reward-title').textContent = isFinal ? 'ปฏิบัติการสำเร็จ!' : 'ภารกิจสำเร็จ!';
+                const xpEl = document.getElementById('reward-xp-big');
+                xpEl.textContent = data.xp_gained > 0 ? `+${data.xp_gained} XP` : '';
+                const itemsList = document.getElementById('reward-items-list');
+                itemsList.innerHTML = '';
+                const allItems = CONFIG.items || {};
+                const renderItem = (id) => {
+                    const item = allItems[id]; if (!item) return;
+                    const div = document.createElement('div'); div.className = 'reward-item';
+                    div.innerHTML = `<div class="reward-item-emoji">${item.emoji}</div><div><div class="reward-item-name">${item.name_th}</div><div class="reward-item-desc">${item.type}</div></div>`;
+                    itemsList.appendChild(div);
+                };
+                (data.items_gained || []).forEach(renderItem); (data.fragments_gained || []).forEach(renderItem);
+                (data.badges_gained || []).forEach(id => {
+                    const item = allItems[id]; if (!item) return;
+                    const div = document.createElement('div'); div.className = 'reward-item';
+                    div.innerHTML = `<div class="reward-item-emoji">${item.emoji}</div><div><div class="reward-item-name">${item.name_th}</div><div class="reward-item-desc">Mastery Badge</div></div>`;
+                    itemsList.appendChild(div);
+                });
+                if (data.tokens_gained > 0) {
+                    const sym = (CONFIG.game_config || {}).token_symbol || 'EP';
+                    const div = document.createElement('div'); div.className = 'reward-item';
+                    div.innerHTML = `<div class="reward-item-emoji">🔍</div><div><div class="reward-item-name">+${data.tokens_gained} ${sym}</div></div>`;
+                    itemsList.appendChild(div);
+                }
+                document.getElementById('modal-reward').classList.add('open');
+                if (data.badges_gained?.length) {
+                    setTimeout(() => {
+                        closeReward();
+                        const badge = allItems[data.badges_gained[0]];
+                        if (badge) showBadgeCelebration(badge);
+                    }, 2000);
+                }
+            }
+
+            function closeReward() {
+                document.getElementById('modal-reward').classList.remove('open');
+                updateAfterQuest(S.active_quest_id);
+                setPhase('npc_selection');
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  BADGE CELEBRATION
+            // ══════════════════════════════════════════════════════════════
+            function showBadgeCelebration(badge) {
+                document.getElementById('badge-celebrate-emoji').textContent = badge.emoji;
+                document.getElementById('badge-celebrate-name').textContent = badge.name_th;
+                document.getElementById('badge-celebrate-desc').innerHTML = renderBubbleContent(badge.desc_th || '');
+                document.getElementById('overlay-badge').classList.add('open');
+                spawnConfetti();
+            }
+            function closeBadgeCelebration() {
+                document.getElementById('overlay-badge').classList.remove('open');
+                document.getElementById('confetti-container').classList.remove('open');
+                document.getElementById('confetti-container').innerHTML = '';
+            }
+            function spawnConfetti() {
+                const container = document.getElementById('confetti-container');
+                container.innerHTML = ''; container.classList.add('open');
+                const colors = ['#7c3aed', '#f59e0b', '#10b981', '#ef4444', '#a78bfa', '#34d399'];
+                for (let i = 0; i < 60; i++) {
+                    const dot = document.createElement('div'); dot.className = 'confetti-dot';
+                    dot.style.cssText = `left:${Math.random() * 100}%;background:${colors[Math.floor(Math.random() * colors.length)]};animation-duration:${1.5 + Math.random() * 2}s;animation-delay:${Math.random() * .5}s;width:${4 + Math.random() * 8}px;height:${4 + Math.random() * 8}px;`;
+                    container.appendChild(dot);
+                }
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  CONSEQUENCE CHAIN
+            // ══════════════════════════════════════════════════════════════
+            async function runConsequenceChain(data) {
+                return new Promise(resolve => {
+                    _consequenceData = data; _consequenceStageIdx = 0;
+                    const stages = data.chain_stages_th || [];
+                    const prog = document.getElementById('consequence-progress');
+                    prog.innerHTML = stages.map((_, i) => `<div class="consequence-dot${i === 0 ? ' active' : ''}"></div>`).join('');
+                    document.getElementById('consequence-lesson').style.display = 'none';
+                    document.getElementById('consequence-stage-text').innerHTML = renderBubbleContent(stages[0] || '...');
+                    const btn = document.getElementById('btn-consequence-next');
+                    btn.textContent = stages.length > 1 ? 'ดูต่อ →' : 'เข้าใจแล้ว';
+                    document.getElementById('modal-consequence').classList.add('open');
+                    _consequenceData._resolve = resolve;
+                });
+            }
+            function nextConsequenceStage() {
+                const data = _consequenceData; if (!data) return;
+                const stages = data.chain_stages_th || [];
+                const dots = document.querySelectorAll('.consequence-dot');
+                if (dots[_consequenceStageIdx]) { dots[_consequenceStageIdx].classList.remove('active'); dots[_consequenceStageIdx].classList.add('done'); }
+                _consequenceStageIdx++;
+                if (_consequenceStageIdx >= stages.length) {
+                    const lessonEl = document.getElementById('consequence-lesson');
+                    lessonEl.innerHTML = renderBubbleContent(data.lesson_th || '💡 ใช้สูตร aₙ = a₁ · rⁿ⁻¹ ตรวจสอบ r ก่อนเสมอ');
+                    lessonEl.style.display = 'block';
+                    document.getElementById('btn-consequence-next').textContent = 'รับทราบ ✓';
+                    document.getElementById('btn-consequence-next').onclick = () => {
+                        document.getElementById('modal-consequence').classList.remove('open');
+                        if (data._resolve) data._resolve();
+                        _consequenceData = null;
+                        if (data.penalty_tokens) spendTokens(-data.penalty_tokens);
+                        updateAfterQuest(S.active_quest_id || S.consequence_quest);
+                        setPhase('npc_selection');
+                    };
+                } else {
+                    if (dots[_consequenceStageIdx]) dots[_consequenceStageIdx].classList.add('active');
+                    document.getElementById('consequence-stage-text').innerHTML = renderBubbleContent(stages[_consequenceStageIdx]);
+                    document.getElementById('btn-consequence-next').textContent = _consequenceStageIdx >= stages.length - 1 ? 'เข้าใจแล้ว' : 'ดูต่อ →';
+                }
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  FINAL QUEST
+            // ══════════════════════════════════════════════════════════════
+            function openFinalQuest(questId) {
+                const quest = (CONFIG.quests || {})[questId]; if (!quest) return;
+                S.active_quest_id = questId;
+                setPhase('final_quest');
+                document.getElementById('fq-title').textContent = quest.title_th;
+                document.getElementById('fq-task-prompt').innerHTML = renderBubbleContent(quest.task_prompt_th || '');
+                document.getElementById('fq-submission-input').value = '';
+                document.getElementById('fq-char-count').textContent = '0 ตัวอักษร';
+                document.getElementById('fq-result-box').style.display = 'none';
+                document.getElementById('fq-result-box').className = 'fq-result-box';
+                document.getElementById('btn-fq-submit').disabled = false;
+                document.getElementById('btn-fq-submit').style.display = '';
+                document.getElementById('btn-fq-retry').style.display = 'none';
+                document.getElementById('modal-final-quest').classList.add('open');
+            }
+            function closeFinalQuest() { document.getElementById('modal-final-quest').classList.remove('open'); setPhase('npc_selection'); }
+            function updateFQCharCount() { const len = document.getElementById('fq-submission-input').value.length; document.getElementById('fq-char-count').textContent = `${len} ตัวอักษร`; }
+            async function submitFinalQuest() {
+                const submission = document.getElementById('fq-submission-input').value.trim();
+                if (submission.length < 50) { toast('กรุณาเขียนให้สมบูรณ์มากขึ้น (อย่างน้อย 50 ตัวอักษร)', 'error'); return; }
+                const btn = document.getElementById('btn-fq-submit');
+                btn.disabled = true; btn.innerHTML = '<span class="spinner-inline"></span> กำลังประเมิน...';
+                try {
+                    const data = await api('/api/final-quest/evaluate', 'POST', { quest_id: S.active_quest_id, student_submission: submission, game_state: S });
+                    showFQResult(data);
+                    if (data.passed) {
+                        applyRewards(data.rewards || {});
+                        if (!S.completed_quests.includes(S.active_quest_id)) { S.completed_quests.push(S.active_quest_id); S.quest_statuses[S.active_quest_id] = 'completed'; }
+                        S.game_completed = true; renderQuestLog(); renderInventory();
+                        setTimeout(() => { closeFinalQuest(); showGameComplete(); }, 4000);
+                    } else { btn.disabled = false; btn.style.display = 'none'; document.getElementById('btn-fq-retry').style.display = ''; }
+                } catch (e) { btn.disabled = false; btn.textContent = '📤 ส่งรายงาน'; toast('เกิดข้อผิดพลาด ลองอีกครั้ง', 'error'); }
+            }
+            function retryFinalQuest() {
+                document.getElementById('fq-result-box').style.display = 'none';
+                document.getElementById('btn-fq-submit').style.display = '';
+                document.getElementById('btn-fq-submit').disabled = false;
+                document.getElementById('btn-fq-submit').textContent = '📤 ส่งรายงาน';
+                document.getElementById('btn-fq-retry').style.display = 'none';
+            }
+            function showFQResult(data) {
+                const box = document.getElementById('fq-result-box');
+                const dimCfg = (CONFIG.game_config?.final_quest_rubric?.dimensions) || [];
+                box.style.display = 'block';
+                box.className = `fq-result-box ${data.passed ? 'pass' : 'fail'}`;
+                const pct = Math.round((data.overall_score || 0) * 100);
+                document.getElementById('fq-score-display').textContent = `${pct}%`;
+                const dimScores = document.getElementById('fq-dim-scores');
+                const dimData = data.dimension_scores || {};
+                dimScores.innerHTML = dimCfg.map(d => {
+                    const score = Math.round((dimData[d.id] || 0) * 100);
+                    const color = score >= 70 ? 'var(--success)' : score >= 50 ? 'var(--warning)' : 'var(--danger)';
+                    return `<div class="fq-dim-row"><div class="fq-dim-name">${d.name_th}</div><div class="fq-dim-bar-wrap"><div class="fq-dim-bar" style="width:${score}%;background:${color};"></div></div><div style="font-family:var(--font-mono);font-size:.72rem;color:${color};min-width:34px;text-align:right;">${score}%</div></div>`;
+                }).join('');
+                document.getElementById('fq-feedback').innerHTML = renderBubbleContent(data.feedback_th || '');
+                document.getElementById('fq-hint').innerHTML = data.hint_th ? renderBubbleContent(data.hint_th) : '';
+                document.getElementById('btn-fq-submit').textContent = '📤 ส่งรายงาน';
+                box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  ITEM DETAIL
+            // ══════════════════════════════════════════════════════════════
+            function openItemDetail(itemId) {
+                const item = (CONFIG.items || {})[itemId]; if (!item) return;
+                document.getElementById('item-detail-emoji').textContent = item.emoji;
+                document.getElementById('item-detail-name').textContent = item.name_th;
+                document.getElementById('item-detail-type').textContent = item.type;
+                document.getElementById('item-detail-desc').innerHTML = renderBubbleContent(item.desc_th || '');
+                const content = document.getElementById('item-detail-content');
+                if (item.content_th) { content.style.display = ''; content.innerHTML = renderBubbleContent(item.content_th); }
+                else content.style.display = 'none';
+                document.getElementById('modal-item').classList.add('open');
+            }
+            function closeItemDetail() { document.getElementById('modal-item').classList.remove('open'); }
+
+            // ══════════════════════════════════════════════════════════════
+            //  GAME COMPLETE
+            // ══════════════════════════════════════════════════════════════
+            function checkGameComplete() {
+                const quests = CONFIG.quests || {};
+                const finals = Object.entries(quests).filter(([, q]) => q.type === 'final');
+                const allDone = finals.every(([id]) => S.completed_quests.includes(id));
+                if (allDone && finals.length > 0) setTimeout(showGameComplete, 1000);
+            }
+            function showGameComplete() {
+                const gc = CONFIG.game_config || {};
+                document.getElementById('complete-title').textContent = `🎉 ${gc.game_title} สำเร็จ!`;
+                const badges = S.player.badges.map(id => { const item = (CONFIG.items || {})[id]; return item ? item.emoji : '🏅'; }).join(' ');
+                document.getElementById('complete-badges').innerHTML = badges || '🏆';
+                document.getElementById('complete-stats').innerHTML = `<div class="complete-stat-row"><span>XP รวม</span><span>${S.player.xp} XP</span></div><div class="complete-stat-row"><span>Level</span><span>${S.player.level}</span></div><div class="complete-stat-row"><span>ภารกิจสำเร็จ</span><span>${S.completed_quests.length}</span></div><div class="complete-stat-row"><span>Badges</span><span>${S.player.badges.length}</span></div>`;
+                document.getElementById('complete-message').textContent = gc.win_condition_th || 'ยินดีด้วย!';
+                closeNPC(); closeFinalQuest(); showScreen('complete');
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  CHAT UTILITIES
+            // ══════════════════════════════════════════════════════════════
+            // appendBubble: role='npc'|'player'|'system'|'kc-question'|'kc-pass'|'kc-fail'
+            // alreadyRendered=true → inject content as HTML directly
+            function appendBubble(role, rawContent, sender, alreadyRendered = false, isHtml = false) {
+                const msgArea = document.getElementById('chat-messages');
+                const typing = document.getElementById('typing-indicator');
+                const wrap = document.createElement('div');
+                // Map extended roles to base class
+                const baseRole = (role === 'kc-question' || role === 'kc-pass' || role === 'kc-fail') ? 'system' : role;
+                wrap.className = `chat-bubble ${baseRole}`;
+                if (role === 'kc-question') wrap.classList.add('kc-question');
+                if (role === 'kc-pass') wrap.classList.add('kc-pass');
+                if (role === 'kc-fail') wrap.classList.add('kc-fail');
+                // ADD-2: Rival visual — NPC bubbles during rival chat
+                if (role === 'npc' && _currentNPCArchetype === 'rival') wrap.classList.add('npc-bubble-rival');
+                const senderStr = baseRole === 'system' ? '' : `<div class="bubble-sender">${escapeHtml(sender)}</div>`;
+                let content;
+                if (alreadyRendered || isHtml) content = rawContent;
+                else content = renderBubbleContent(rawContent);
+                wrap.innerHTML = `${senderStr}<div class="bubble-text">${content}</div>`;
+                msgArea.insertBefore(wrap, typing);
+                scrollChatToBottom();
+                return wrap;
+            }
+            function scrollChatToBottom() { const el = document.getElementById('chat-messages'); if (el) el.scrollTop = el.scrollHeight; }
+            function showTyping() { const t = document.getElementById('typing-indicator'); if (t) { t.classList.add('visible'); scrollChatToBottom(); } }
+            function hideTyping() { const t = document.getElementById('typing-indicator'); if (t) t.classList.remove('visible'); }
+            function updateTurnsBadge() {
+                const npcId = _activeNPCId;
+                const turns = npcId ? (S.npc_chat_turns[npcId] || 0) : 0;
+                const minT = npcId ? (CONFIG.npcs[npcId]?.min_turns || 0) : 0;
+                const el = document.getElementById('chat-turns-badge');
+                if (el) el.textContent = `เทิร์น ${turns}/${minT}`;
+            }
+            function handleChatKey(e) {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+                setTimeout(() => autoResizeTextarea(e.target), 0);
+            }
+            function autoResizeTextarea(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
+
+            // ══════════════════════════════════════════════════════════════
+            //  FORMULA POPUP
+            // ══════════════════════════════════════════════════════════════
+            function toggleFormulaPopup() { _formulaPopupOpen ? closeFormulaPopup() : openFormulaPopup(); }
+            function openFormulaPopup() {
+                closeComparatorPopup();
+                _formulaPopupOpen = true;
+                document.getElementById('formula-popup')?.classList.add('open');
+                document.getElementById('btn-math-toggle')?.classList.add('active');
+                setTimeout(() => document.getElementById('chat-math-field')?.focus(), 80);
+            }
+            function closeFormulaPopup() {
+                _formulaPopupOpen = false;
+                document.getElementById('formula-popup')?.classList.remove('open');
+                document.getElementById('btn-math-toggle')?.classList.remove('active');
+                const mf = document.getElementById('chat-math-field'); if (mf) mf.value = '';
+            }
+            function insertFormula() {
+                const mf = document.getElementById('chat-math-field'); if (!mf) return;
+                const latex = mf.value.trim();
+                if (!latex) { toast('กรุณาพิมพ์สูตรก่อน', 'error'); return; }
+                const textarea = document.getElementById('chat-input'); if (!textarea) return;
+                const start = textarea.selectionStart, end = textarea.selectionEnd;
+                const before = textarea.value.substring(0, start), after = textarea.value.substring(end);
+                const insertion = `$${latex}$`;
+                textarea.value = before + insertion + after;
+                const newPos = start + insertion.length;
+                textarea.setSelectionRange(newPos, newPos);
+                textarea.focus(); autoResizeTextarea(textarea);
+                closeFormulaPopup(); toast('✓ แทรกสูตรเรียบร้อย', 'success');
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  UTILITIES
+            // ══════════════════════════════════════════════════════════════
+            function escapeHtml(str) {
+                if (typeof str !== 'string') return '';
+                return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+            function toast(message, type = 'info') {
+                const container = document.getElementById('toast-container');
+                const el = document.createElement('div'); el.className = `toast ${type}`;
+                const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+                el.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+                container.appendChild(el); setTimeout(() => el.remove(), 3100);
+            }
+            function floatXP(text) {
+                const el = document.createElement('div'); el.className = 'xp-float'; el.textContent = text;
+                el.style.cssText = `top:${60 + Math.random() * 30}px;left:${Math.random() * 60 + 20}%;`;
+                document.body.appendChild(el); setTimeout(() => el.remove(), 1500);
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  API HELPER
+            // ══════════════════════════════════════════════════════════════
+            async function api(endpoint, method = 'GET', body = null) {
+                const opts = { method, headers: { 'Content-Type': 'application/json' } };
+                if (body) opts.body = JSON.stringify(body);
+                const resp = await fetch(endpoint, opts);
+                if (!resp.ok) {
+                    const err = await resp.text().catch(() => resp.statusText);
+                    throw new Error(`API ${endpoint} → ${resp.status}: ${err}`);
+                }
+                return resp.json();
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            //  PUBLIC API
+            // ══════════════════════════════════════════════════════════════
+            return {
+                init, switchTab, switchTerminalTab, filterQuests,
+                openNPC, closeNPC, sendMessage, handleChatKey,
+                closeFinalQuest, submitFinalQuest, retryFinalQuest, updateFQCharCount,
+                nextConsequenceStage, closeReward, openItemDetail, closeItemDetail,
+                closeBadgeCelebration,
+                toggleFormulaPopup, closeFormulaPopup, insertFormula,
+                toggleComparatorPopup, closeComparatorPopup, // ADD-3
+                showKCHint, // KC static hint
+            };
+
+        })();
+
+        // Bootstrap
+        document.addEventListener('DOMContentLoaded', () => {
+            game.init();
+            document.getElementById('modal-npc').addEventListener('click', function (e) {
+                if (e.target === this) game.closeNPC();
+            });
+        });
+    </script>
+</body>
+</html>
